@@ -1,0 +1,62 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}
+body{margin:0;width:1920px;height:1080px;background:radial-gradient(1200px 700px at 70% 10%,#1e2433 0%,#13151b 60%);color:#eef0f4;font-family:system-ui,"Segoe UI",Arial;padding:56px 70px;position:relative;overflow:hidden}
+h1{margin:0;font-size:46px;letter-spacing:-.5px} .sub{color:#9aa1ae;font-size:21px;margin-top:8px}
+.flow{display:flex;align-items:stretch;gap:0;margin-top:44px;height:330px}
+.box{background:#1c2029;border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:22px 22px 18px;display:flex;flex-direction:column}
+.box .k{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a93a5;margin-bottom:8px}
+.box .t{font-size:24px;font-weight:700;margin-bottom:12px}
+.box ul{margin:0;padding-left:18px;color:#cfd4dd;font-size:16px;line-height:1.5}
+.arr{width:58px;display:flex;align-items:center;justify-content:center;flex:none}
+.arr svg{width:46px;height:24px}
+.b1{width:250px} .b2{width:330px;border-color:#3d6fe0aa} .b3{width:390px;background:linear-gradient(160deg,#20304f,#1c2029);border:2px solid #4f86ff} .b4{width:220px}
+.views{display:flex;flex-direction:column;gap:14px;width:300px}
+.views .box{flex:1;padding:16px 20px}
+.views .t{font-size:21px;margin-bottom:6px}
+.badge{display:inline-block;font-size:13px;padding:3px 10px;border-radius:20px;background:#3d6fe0;color:#fff;font-weight:600;margin-bottom:10px}
+.thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:auto}
+.thumbs div{aspect-ratio:1;border-radius:9px;background:radial-gradient(circle at 50% 40%,#3a4152,#1d2230);display:flex;align-items:center;justify-content:center}
+.thumbs img{width:90%;height:90%;object-fit:contain}
+.code{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#a9c4ff;background:#121722;border-radius:10px;padding:10px 12px;margin:2px 0 12px;line-height:1.45}
+h3{margin:40px 0 16px;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#8a93a5;font-weight:600}
+.feat{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.f{background:#1a1d25;border-radius:18px;padding:20px 22px;border-top:4px solid var(--c)}
+.f .t{font-size:20px;font-weight:700;margin-bottom:10px}
+.f ul{margin:0;padding-left:18px;color:#cfd4dd;font-size:15.5px;line-height:1.55}
+.tech{position:absolute;left:70px;right:70px;bottom:44px;display:flex;gap:12px;flex-wrap:wrap}
+.tech span{font-size:15px;padding:8px 14px;border-radius:30px;background:#1c2029;border:1px solid rgba(255,255,255,.09);color:#cfd4dd}
+.tech b{color:#fff}
+</style></head><body>
+<h1>Как устроен VR-шоурум</h1>
+<div class="sub">Один веб-сайт: редактор, прогулка на ПК и VR работают на общих данных проекта — без установки программ</div>
+
+<div class="flow">
+  <div class="box b1"><div class="k">1 · Вход</div><div class="t">Заявка клиента</div><ul><li>план помещения</li><li>размеры</li><li>нужное оборудование</li></ul></div>
+  <div class="arr"><svg viewBox="0 0 46 24"><path d="M2 12h38" stroke="#6f86b8" stroke-width="3"/><path d="M32 4l10 8-10 8" fill="none" stroke="#6f86b8" stroke-width="3"/></svg></div>
+  <div class="box b2"><div class="k">2 · Менеджер</div><div class="t">Редактор «как в Sims»</div><ul><li>стены тянутся метками, отсеки Г/П</li><li>план клиента подложкой на полу</li><li>мебель из каталога, сетка 10–100 см</li><li>3 режима стен, отмена Ctrl+Z</li><li>проверка пересечений</li></ul></div>
+  <div class="arr"><svg viewBox="0 0 46 24"><path d="M2 12h38" stroke="#6f86b8" stroke-width="3"/><path d="M32 4l10 8-10 8" fill="none" stroke="#6f86b8" stroke-width="3"/></svg></div>
+  <div class="box b3"><div class="k">3 · Данные</div><div class="t">Проект + каталог</div>
+    <div class="code">layout.json — стены, отсеки,<br>мебель, позиции, варианты</div>
+    <ul style="margin-bottom:12px"><li>33 модели: мебель, оборудование, мелочь</li><li>характеристики, размеры, варианты</li></ul>
+    <div class="thumbs">
+      <div><img src="models/14_Горка холодильная для фруктов.png"></div><div><img src="models/16_Пароконвектомат.png"></div><div><img src="models/01_Шкаф для документов.png"></div><div><img src="models/05_Верстак слесарный.png"></div><div><img src="models/04_Кресло офисное Эрго.png"></div><div><img src="models/30_Кофемашина профессиональная.png"></div>
+    </div></div>
+  <div class="arr"><svg viewBox="0 0 46 24"><path d="M2 12h38" stroke="#6f86b8" stroke-width="3"/><path d="M32 4l10 8-10 8" fill="none" stroke="#6f86b8" stroke-width="3"/></svg></div>
+  <div class="box b4"><div class="k">4 · Публикация</div><div class="t">Одна ссылка</div><ul><li>хостинг по https</li><li>открыть в браузере</li><li>ничего не устанавливать</li></ul></div>
+  <div class="arr"><svg viewBox="0 0 46 24"><path d="M2 12h38" stroke="#6f86b8" stroke-width="3"/><path d="M32 4l10 8-10 8" fill="none" stroke="#6f86b8" stroke-width="3"/></svg></div>
+  <div class="views">
+    <div class="box"><span class="badge">ПК</span><div class="t">Прогулка в браузере</div><ul><li>WASD и мышь, клик — подойти</li></ul></div>
+    <div class="box"><span class="badge" style="background:#23966a">VR</span><div class="t">Meta Quest 2</div><ul><li>телепорт, хват предметов, план на руке</li></ul></div>
+  </div>
+</div>
+
+<h3>Что может клиент внутри помещения</h3>
+<div class="feat">
+  <div class="f" style="--c:#5b8def"><div class="t">Перемещение</div><ul><li>свободная ходьба и телепорт</li><li>мини-карта «вы здесь»</li><li>быстрый переход по зонам</li></ul></div>
+  <div class="f" style="--c:#4f86ff"><div class="t">Осмотр изделия</div><ul><li>вращение и приближение</li><li>характеристики и размеры в мм</li><li>смена цвета и комплектации</li></ul></div>
+  <div class="f" style="--c:#e58e3c"><div class="t">Взаимодействие</div><ul><li>двери, ящики, краны, конфорки</li><li>взять в руки и бросить — физика</li><li>переставить мебель, сесть на кресло</li></ul></div>
+  <div class="f" style="--c:#3fae78"><div class="t">Для продаж</div><ul><li>избранное клиента</li><li>спецификация проекта</li><li>сохранение и открытие проекта</li></ul></div>
+</div>
+
+<div class="tech"><span><b>WebGL 2</b> · своя графика без внешних библиотек</span><span><b>WebXR</b> · VR прямо в браузере очков</span><span><b>~390</b> отрисовок за кадр в демо-зале — оптимизация под Quest 2</span><span><b>1 файл</b> index.html</span></div>
+</body></html>

@@ -1,0 +1,32 @@
+{
+  "name": "VR-шоурум",
+  "short_name": "VR-шоурум",
+  "description": "Шоурум мебели и оборудования в VR и редактор помещения",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1e2226",
+  "theme_color": "#1e2226",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "ovr_package_name": "ru.showroom.vr"
+}
