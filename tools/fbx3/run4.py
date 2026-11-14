@@ -75,7 +75,7 @@ def ovgroups(names):
 def ovbox(ps,gof,h):
     gof['_boxes']={g:list(map(lambda v:v.tolist(),bb(ps,[p['name'] for p in ps if hn in p['anc']]))) for g,hn in [(gg,hh) for gg,hh in h.items()]}
 CFG=[
- ('minifridge','minifridge.fbx',dict(height=0.86,rot=RM90,special=minifridge)),
+ ('minifridge','minifridge.fbx',dict(height=0.86,rot=RM90,special=minifridge,drop=('arm',))),
  ('sinktable','newmoika1.fbx',dict(height=1.2,rot=R180)),
  ('cakecase','newvitrina.fbx',dict(height=1.3,special=cakecase)),
  ('wardrobe1','newwardrobe1.fbx',dict(height=2.4,special=wardrobe1)),
@@ -92,7 +92,7 @@ CFG=[
  ('telega','../new4/telega.fbx',dict(height=1.0,special=telega)),
 ]
 
-OUT=json.load(open('/home/claude/tools3/new3.json'))
+OUT=json.load(open('/home/claude/tools3/new4.json'))
 for k in ['microwave','chestfreezer','gamechair','deckoven']: OUT.pop(k,None)
 only=sys.argv[1:]
 for key,f,kw in CFG:
