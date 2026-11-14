@@ -512,7 +512,7 @@ void main(){ vec3 pp=aPos+aG*uMorph.x+aT*uMorph.y; vec4 w=uM*vec4(pp,1.0); vW=w.
 const FS_LIT=`#version 300 es
 precision highp float;
 in vec3 vN; in vec3 vW; in vec2 vUv; in vec3 vL; in vec3 vLN; out vec4 o;
-uniform vec3 uColor,uCam,uLight,uHlColor; uniform float uSpec,uAlpha,uEmis,uHl,uGrid,uGridStep,uTexMode,uTexScale,uAo,uExp,uShOn,uShTexel; uniform sampler2D uTex; uniform highp sampler2DShadow uShadowMap; uniform mat4 uShVP[4]; uniform float uLampOn,uShFar,uShQ,uShRes; uniform highp sampler2D uShRaw; uniform int uLN; uniform vec3 uLP[8],uLC[8]; uniform vec2 uLK[8]; uniform float uLT[8];
+uniform vec3 uColor,uCam,uLight,uHlColor; uniform float uSpec,uAlpha,uEmis,uHl,uGrid,uGridStep,uTexMode,uTexScale,uAo,uExp,uShOn,uShTexel; uniform sampler2D uTex; uniform highp sampler2DShadow uShadowMap; uniform mat4 uShVP[4]; uniform float uDay,uLampOn,uShFar,uShQ,uShRes; uniform highp sampler2D uShRaw; uniform int uLN; uniform vec3 uLP[8],uLC[8]; uniform vec2 uLK[8]; uniform float uLT[8];
 float shadowAt(int t,vec3 lp,vec3 wp,float dl){ vec4 sp4=uShVP[t]*vec4(wp,1.0); if(sp4.w<0.01) return 1.0; vec2 pc=sp4.xy/sp4.w*0.5+0.5; if(pc.x<0.003||pc.x>0.997||pc.y<0.003||pc.y>0.997) return 1.0;
   vec2 off=vec2(float(t-2*(t/2)),float(t/2))*0.5; pc=pc*0.5+off; vec2 lo=off+vec2(0.002),hi=off+vec2(0.498); float ref=(length(wp-lp)-0.012-0.003*dl)/uShFar,tx=uShTexel,st=tx; int R=uShQ<1.5?0:1;
   if(uShQ>2.5){ float bs=0.0,bn=0.0; for(int i=-1;i<=1;i++) for(int j=-1;j<=1;j++){ float z=texture(uShRaw,clamp(pc+vec2(float(i),float(j))*tx*4.0,lo,hi)).r; if(z<ref){ bs+=z; bn+=1.0; } }
@@ -539,6 +539,7 @@ void main(){
     vec3 bounce=vec3(0.36,0.34,0.31)*max(-n.y,0.0)*rad*rad*1.6;
     float rim=pow(1.0-max(dot(n,V),0.0),4.0)*0.05*uSpec*rad; float fill=max(dot(n,V),0.0)*0.05*rad;
     c=base*(amb*ao+bounce+lsum+fill)+ssum*uSpec*0.55+rim*vec3(1.0,0.97,0.92);
+    vec3 dayc=base*(mix(vec3(0.27,0.26,0.25),vec3(0.50,0.52,0.56),hemi)*ao+vec3(1.0,0.95,0.88)*ndl*0.7); c=mix(c,max(c,dayc),uDay*(1.0-min(rad,1.0)));
   } else {
     vec3 amb=mix(vec3(0.27,0.26,0.25),vec3(0.50,0.52,0.56),hemi); vec3 H=normalize(L+V);
     float sp=pow(max(dot(n,H),0.0),48.0)*uSpec; float rim=pow(1.0-max(dot(n,V),0.0),3.0)*0.08*uSpec; float fill=max(dot(n,V),0.0)*0.10;
@@ -719,12 +720,12 @@ const BOTTLES=['#c0392b','#27ae60','#e67e22','#2980b9','#f1c40f'].map(h=>mat(hex
 
 /* ============ Узлы сцены ============ */
 class Node{
-  constructor(o={}){ this.pos=o.pos?o.pos.slice():[0,0,0]; this.rotY=o.rotY||0; this.rotX=o.rotX||0; this.mesh=o.mesh||null; this.mat=o.mat||null; this.children=[]; this.parent=null; this.anim=o.anim||null;
+  constructor(o={}){ this.pos=o.pos?o.pos.slice():[0,0,0]; this.rotY=o.rotY||0; this.rotX=o.rotX||0; this.rotZ=o.rotZ||0; this.mesh=o.mesh||null; this.mat=o.mat||null; this.children=[]; this.parent=null; this.anim=o.anim||null;
     this.world=null; this.item=null; this.pick=o.pick!==false; this.unlit=!!o.unlit; this.tex=o.tex||null; this.scl=o.scl||null; this.solid=!!o.solid; this.noDepth=!!o.noDepth; }
   add(c){ c.parent=this; this.children.push(c); return c; }
   local(){ let [x,y,z]=this.pos,ry=this.rotY,rx=this.rotX; const a=this.anim;
     if(a){ const e=ease(a.t); if(a.type==='rotY') ry+=a.amount*e; else if(a.type==='rotX') rx+=a.amount*e; else if(a.type==='slideZ') z+=a.amount*e; else if(a.type==='slideY') y+=a.amount*e; else if(a.type==='slideX') x+=a.amount*e; else if(a.type==='spin'){ if(a.axis==='y') ry+=a.phase; else if(a.axis==='x') rx+=a.phase; } else if(a.type==='osc') ry+=Math.sin(a.phase)*a.amount*e; else if(a.type==='sway'){ rx+=Math.sin(a.phase)*a.amount*e; ry+=Math.sin(a.phase*0.7)*a.amount*0.6*e; } }
-    let m=M4.trans(x,y,z); if(ry) m=M4.mul(m,M4.rotY(ry)); if(rx) m=M4.mul(m,M4.rotX(rx)); if(a&&a.type==='rotZ') m=M4.mul(m,M4.rotZ(a.amount*ease(a.t))); if(a&&a.type==='spin'&&a.axis==='z'&&a.phase) m=M4.mul(m,M4.rotZ(a.phase)); if(this.scl) m=M4.mul(m,M4.scale(...this.scl)); if(a&&a.type==='scaleY') m=M4.mul(m,M4.scale(1,Math.max(0.001,ease(a.t)),1)); if(a&&a.type==='sqY'){ const e=ease(a.t); m=M4.mul(m,M4.scale(1+a.amount*0.25*e,1-a.amount*e,1+a.amount*0.25*e)); } return m; }
+    let m=M4.trans(x,y,z); if(ry) m=M4.mul(m,M4.rotY(ry)); if(rx) m=M4.mul(m,M4.rotX(rx)); if(this.rotZ) m=M4.mul(m,M4.rotZ(this.rotZ)); if(a&&a.type==='rotZ') m=M4.mul(m,M4.rotZ(a.amount*ease(a.t))); if(a&&a.type==='spin'&&a.axis==='z'&&a.phase) m=M4.mul(m,M4.rotZ(a.phase)); if(this.scl) m=M4.mul(m,M4.scale(...this.scl)); if(a&&a.type==='scaleY') m=M4.mul(m,M4.scale(1,Math.max(0.001,ease(a.t)),1)); if(a&&a.type==='sqY'){ const e=ease(a.t); m=M4.mul(m,M4.scale(1+a.amount*0.25*e,1-a.amount*e,1+a.amount*0.25*e)); } return m; }
 }
 // скруглённый параллелепипед с гладкими нормалями; bulge — «подушка» на гранях [x,y,z]
 function rboxGeom(w,h,d,r,N=8,bulge=[0,0,0]){ const H=[w/2,h/2,d/2],R=Math.min(r,H[0]-1e-4,H[1]-1e-4,H[2]-1e-4),pos=[],nrm=[],uv=[],idx=[];
@@ -1120,8 +1121,8 @@ const CATALOG={
       P(hp,0.11,0.035,0.004,mat(hex(v.a),0.5,{noTex:true}),0,0,0.042);
       // подлокотники
       for(const s of [-1,1]){ P(root,0.04,0.2,0.05,blk,s*0.29,y0+0.06,0.02); P(root,0.02,0.04,0.2,blk,s*0.27,y0-0.04,0.02); RB(root,0.085,0.035,0.26,0.012,blk,s*0.29,y0+0.175,0.04,{N:6}); } } },
-  oven4:{name:'Печь хлебопекарная подовая, 4 камеры',cat:'production',purpose:'Четырёхкамерная подовая печь. Нажмите на дверцу камеры — она откинется вниз. Круглая кнопка справа включает нагрев: горит индикатор и подсветка камеры.',specs:[['Размер','1196×937 мм'],['Высота','2000 мм'],['Камер','4'],['Температура','до 400 °C']],materials:'Нержавеющая сталь, каменный под, стекло в дверцах',variants:[{name:'Нержавейка'}],build(root,v){ ovenPanel(root,n3Build(root,'oven4',v)); } },
-  oven2:{name:'Печь хлебопекарная подовая, 2 камеры',cat:'production',purpose:'Двухкамерная подовая печь на подставке. Дверцы камер откидываются вниз, круглые кнопки справа включают нагрев и индикаторы.',specs:[['Размер','1334×951 мм'],['Высота','1377 мм'],['Камер','2'],['Температура','до 400 °C']],materials:'Нержавеющая сталь, каменный под, стекло в дверцах',variants:[{name:'Нержавейка'}],build(root,v){ ovenPanel(root,n3Build(root,'oven2',v)); } },
+  oven4:{name:'Печь хлебопекарная подовая, 4 камеры',cat:'production',purpose:'Четырёхкамерная подовая печь. Нажмите на дверцу камеры — она откинется вниз.',specs:[['Размер','1196×937 мм'],['Высота','2000 мм'],['Камер','4'],['Температура','до 400 °C']],materials:'Нержавеющая сталь, каменный под, стекло в дверцах',variants:[{name:'Нержавейка'}],build(root,v){ n3Build(root,'oven4',v); } },
+  oven2:{name:'Печь хлебопекарная подовая, 2 камеры',cat:'production',purpose:'Двухкамерная подовая печь на подставке. Дверцы камер откидываются вниз.',specs:[['Размер','1334×951 мм'],['Высота','1377 мм'],['Камер','2'],['Температура','до 400 °C']],materials:'Нержавеющая сталь, каменный под, стекло в дверцах',variants:[{name:'Нержавейка'}],build(root,v){ n3Build(root,'oven2',v); } },
   telega:{name:'Тележка инструментальная',cat:'production',purpose:'Тележка на колёсах с пятью выдвижными ящиками для инструмента. Нажмите на ящик — он выдвинется.',specs:[['Размер','994×666 мм'],['Высота','1000 мм'],['Ящиков','5, на шариковых направляющих'],['Нагрузка','до 300 кг']],materials:'Сталь с порошковой покраской, колёса — полиуретан',
     variants:[{name:'Красная',key:'r',m:{'material':mat(hex('#b3262b'),0.45)}},{name:'Синяя',key:'b',m:{'material':mat(hex('#2457b5'),0.45)}},{name:'Чёрная',key:'k',m:{'material':mat(hex('#25272b'),0.45)}}],build(root,v){ n3Build(root,'telega',v); } },
   desklamp:{name:'Лампа настольная',cat:'light',small:true,purpose:'Настольная лампа на шарнирах. Нажмите на кнопку на основании — включится свет.',specs:[['Высота','до 450 мм'],['Лампа','LED 8 Вт, 4000 K'],['Основание','Ø 160 мм']],materials:'Сталь с порошковой покраской',
@@ -1145,10 +1146,10 @@ const CATALOG={
       P(root,W,0.04,D,st,0,H+0.02,0); P(root,W,0.12,0.03,st,0,H+0.1,-D/2+0.015);
       const food=['#c93a2a','#6aa33f','#f0d36a','#f3efe4','#2d2a24','#e8a04a'],gx=[-0.42,-0.21,0,0.21,0.42,0.63-0.63];
       for(let i=0;i<6;i++){ const x=-0.5+i*0.2; P(root,0.18,0.004,0.17,dk,x,H+0.041,-0.13); P(root,0.165,0.004,0.155,mat(hex(food[i]),0.15,{noTex:true}),x,H+0.032,-0.13); for(let k=0;k<9;k++) C(root,0.012,0.008,mat(hex(food[i]).map(c=>c*(0.85+0.3*((k*37)%10)/10)),0.2,{noTex:true}),x-0.05+(k%3)*0.05,H+0.038,-0.18+Math.floor(k/3)*0.05,{seg:8}); }
-      const lid=G(root,0,H+0.04,-0.215,{anim:anim('rotX',-1.35,'Крышка ванн')}); lid.anim.rate=1.6; P(lid,1.24,0.012,0.2,st,0,0.006,0.1); P(lid,1.24,0.02,0.012,st2,0,0.012,0.2); C(lid,0.012,0.6,st2,0,0.03,0.205,{rotZ:Math.PI/2,seg:12});
+      const lid=G(root,0,H+0.04,-0.215,{anim:anim('rotX',-1.35,'Крышка ванн')}); lid.anim.rate=1.6; P(lid,1.24,0.012,0.2,st,0,0.006,0.1); P(lid,1.24,0.02,0.012,st2,0,0.012,0.2); P(lid,0.3,0.008,0.03,st2,0,0.004,0.215);
       P(root,1.2,0.022,0.26,mat(hex('#f4f4ef'),0.25,{noTex:true}),-0.03,H+0.051,0.2); P(root,1.2,0.002,0.26,mat(hex('#e6e6df'),0.2,{noTex:true}),-0.03,H+0.0625,0.2);
       // дверцы на петлях по краям, с ручками-скобами и уплотнителем
-      [[-1,'Левая дверца'],[1,'Правая дверца']].forEach(([s,l])=>{ const hx=s*(W/2-0.01),dw=W/2-0.02,d=G(root,hx,0.13,D/2,{anim:anim('rotY',s*-1.7,l)}); d.anim.rate=1.6;
+      [[-1,'Левая дверца'],[1,'Правая дверца']].forEach(([s,l])=>{ const hx=s*(W/2-0.01),dw=W/2-0.02,d=G(root,hx,0.13,D/2,{anim:anim('rotY',s*1.7,l)}); d.anim.rate=1.6;
         P(d,dw,H-0.24,0.04,st,-s*dw/2,(H-0.24)/2,0.02); P(d,dw-0.04,H-0.28,0.006,mat(hex('#2b2d31'),0.3,{noTex:true}),-s*dw/2,(H-0.24)/2,-0.002);
         P(d,0.02,0.32,0.03,st2,-s*(dw-0.06),(H-0.24)/2,0.06); for(const yy of [0.16,-0.16]) P(d,0.02,0.02,0.04,st2,-s*(dw-0.06),(H-0.24)/2+yy,0.045); });
       // панель управления: табло с зелёными цифрами и кнопкой
@@ -1717,7 +1718,7 @@ function renderScene(view,proj,camPos,list,opt={}){
   gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.disable(gl.BLEND); gl.depthMask(true);
   gl.useProgram(PL.p); gl.uniformMatrix4fv(PL.u.uVP,false,vp); gl.uniform3fv(PL.u.uCam,camPos); gl.uniform3fv(PL.u.uLight,o.light); gl.uniform1f(PL.u.uAo,o.ao); gl.uniform1f(PL.u.uExp,o.exp); gl.uniform1f(PL.u.uGridStep,state.grid.step);
   const shOn=o.shadows&&SHD.tex&&shadowsAllowed(),lamps=o.shadows&&!o.noLamps; gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D,SHD.tex); gl.uniform1i(PL.u.uShadowMap||null,3); gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D,SHD.tex); gl.bindSampler(4,SHD.samp); gl.uniform1i(PL.u.uShRaw||null,4);
-  gl.uniform1f(PL.u.uShOn||null,shOn?1:0); gl.uniform1f(PL.u.uShTexel||null,1/(SHD.size||1024)); gl.uniform1f(PL.u.uShRes||null,(SHD.size||1024)/2); gl.uniform1f(PL.u.uShQ||null,shadowQ()); gl.uniform1f(PL.u.uShFar||null,SHD.far); gl.uniform1f(PL.u.uLampOn||null,lamps?1:0);
+  gl.uniform1f(PL.u.uShOn||null,shOn?1:0); gl.uniform1f(PL.u.uShTexel||null,1/(SHD.size||1024)); gl.uniform1f(PL.u.uShRes||null,(SHD.size||1024)/2); gl.uniform1f(PL.u.uShQ||null,shadowQ()); gl.uniform1f(PL.u.uShFar||null,SHD.far); gl.uniform1f(PL.u.uLampOn||null,lamps?1:0); gl.uniform1f(PL.u.uDay||null,o.day!=null?o.day:((state.mode==='walk'||xr.session)?0.22:1));
   { const ls=lamps?gatherLights():[],n=ls.length,lp=new Float32Array(24),lc=new Float32Array(24),lk=new Float32Array(16),lt=new Float32Array(8).fill(-1),vps=new Float32Array(64);
     ls.forEach((l,i)=>{ lp.set(l.p,i*3); lc.set(l.c.map(v=>v*l.pow*l.on),i*3); lk.set([l.k,l.down?1:0],i*2); lt[i]=shOn&&SHD.vps[l.tile]?l.tile:-1; }); for(let t=0;t<4;t++) vps.set(SHD.vps[t]||M4.ident(),t*16);
     gl.uniform1i(PL.u.uLN||null,n); if(PL.u['uLP[0]']){ gl.uniform3fv(PL.u['uLP[0]'],lp); gl.uniform3fv(PL.u['uLC[0]'],lc); gl.uniform2fv(PL.u['uLK[0]'],lk); gl.uniform1fv(PL.u['uLT[0]'],lt); } if(PL.u['uShVP[0]']) gl.uniformMatrix4fv(PL.u['uShVP[0]'],false,vps); }
