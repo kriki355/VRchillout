@@ -16,17 +16,19 @@ def minang(xz):
         a=math.radians(d); c,s=math.cos(a),math.sin(a); u=xz[:,0]*c+xz[:,1]*s; v=-xz[:,0]*s+xz[:,1]*c
         ar=(u.max()-u.min())*(v.max()-v.min()); best=min(best,(ar,a))
     return best[1]
-def model(key,f,height=None,rot=None,dims=None,groups=None,target=22000,override=None,special=None,keep=None):
+def model(key,f,height=None,rot=None,dims=None,groups=None,target=22000,override=None,special=None,keep=None,twoside=False,drop=(),scale=None):
     ps=load(R+f,override); hinges={}
     if override: hinges={h:load.hinge(h)[:3,3].copy() for h in override}
-    if keep: ps=[p for p in ps if keep(p)]
+    if keep: ps=[q for q in (keep(p) for p in ps) if q is not None]
     Rm=np.eye(3) if rot is None else rot
     for p in ps: p['P']=p['P']@Rm.T
     hinges={h:v@Rm.T for h,v in hinges.items()}
     gof={}
     if special: special(ps,gof,hinges)
+    ps=[p for p in ps if p['name'] not in drop]
     A=np.concatenate([p['P'].reshape(-1,3) for p in ps]); lo=A.min(0); hi=A.max(0); c=np.array([(lo[0]+hi[0])/2,lo[1],(lo[2]+hi[2])/2])
-    if dims: S=np.array(dims)/(hi-lo)
+    if scale: S=np.full(3,scale)
+    elif dims: S=np.array(dims)/(hi-lo)
     else: S=np.full(3,height/(hi[1]-lo[1]))
     for p in ps: p['P']=(p['P']-c)*S
     hinges={h:(v-c)*S for h,v in hinges.items()}
@@ -56,6 +58,7 @@ def model(key,f,height=None,rot=None,dims=None,groups=None,target=22000,override
     res=[]
     for (g,mn),L in merged.items():
         P=np.concatenate([a for a,_,_ in L]); fn=np.concatenate([b for _,b,_ in L]); ar=np.concatenate([c for _,_,c in L])
+        if twoside: P=np.concatenate([P,P[:,[0,2,1]]]); fn=np.concatenate([fn,-fn]); ar=np.concatenate([ar,ar])
         for s in range(0,len(P),20000):
             V,N,I=smooth(P[s:s+20000],fn[s:s+20000],ar[s:s+20000]); res.append(enc(V,N,I.reshape(-1),f'{g}|{mn}|{s}',mn,g))
     size=((hi-lo)*S).round(3).tolist(); print(key,'size',size,'tris',n,'of',tot,'cell',round(cell,4))
@@ -65,13 +68,17 @@ def model(key,f,height=None,rot=None,dims=None,groups=None,target=22000,override
         if 'hinge' in spec: gi[gn]['pivot']=hinges[spec['hinge']].round(4).tolist()
     for gn,v in gof.get('_info',{}).items():
         v=dict(v)
+        if 'amountX' in v: v.pop('amountRaw',None); v['amount']=round(v.pop('amountX')*S[0],4)
         if 'amountRaw' in v: v['amount']=round(v.pop('amountRaw')*S[2],4)
         if 'pivotRaw' in v: v['pivot']=((np.array(v.pop('pivotRaw'))-c)*S).round(4).tolist()
         gi[gn]=v
+    meta={}
+    for nm,(a,b) in gof.get('_boxes',{}).items(): meta[nm]=[((np.array(a)-c)*S).round(4).tolist(),((np.array(b)-c)*S).round(4).tolist()]
+    if meta: gi['_meta']={'type':'meta','boxes':meta}
     for gn,spec in gi.items():
         if spec.get('edge'):
             G=np.concatenate([p['P'].reshape(-1,3) for p in ps if p['g']==gn]); H=[p['P'].reshape(-1,3) for p in ps if p['g']==gn and re.fullmatch(spec['edge'],p['name'])]
             hx=np.concatenate(H)[:,0].mean() if H else G[:,0].max(); left=hx>(G[:,0].min()+G[:,0].max())/2
             spec['pivot']=[round(float(G[:,0].min() if left else G[:,0].max()),4),0,round(float(G[:,2].min()),4)]; spec['amount']=-1.75 if left else 1.75; spec.pop('edge')
-    return {'parts':res,'size':size,'groups':gi}
+    return {'parts':res,'size':size,'groups':gi,'S':float(S[1])}
 model.extra={}
