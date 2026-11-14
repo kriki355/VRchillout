@@ -520,9 +520,8 @@ float shadowAt(int t,vec3 lp,vec3 wp,float dl){ vec4 sp4=uShVP[t]*vec4(wp,1.0); 
   if(uShQ>2.5){ float bs=0.0,bn=0.0; for(int i=-1;i<=1;i++) for(int j=-1;j<=1;j++){ float z=texture(uShRaw,clamp(pc+vec2(float(i),float(j))*tx*4.0,lo,hi)).r; if(z<ref){ bs+=z; bn+=1.0; } }
     if(bn<0.5) return 1.0; float zb=bs/bn*uShFar,zr=ref*uShFar; float pen=clamp(0.45*uShRes/8.0*(zr-zb)/(zb*zr),1.0,9.0); st=tx*pen*0.9; }
   else st=tx*(uShQ<1.5?2.2:1.6);
-  // поворотный пуассоновский диск с шумом по пикселю — мягкий край без лесенки и полос
-  float an=6.2832*fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(0.06711056,0.00583715)))); float ca=cos(an),sa=sin(an); mat2 rot=mat2(ca,sa,-sa,ca);
-  float acc=0.0; for(int i=0;i<12;i++){ acc+=texture(uShadowMap,vec3(clamp(pc+rot*PDK[i]*st*2.0,lo,hi),ref)); } return acc/12.0; }
+  // пуассоновский диск без шума по экрану: тень не мерцает, когда камера двигается
+  float acc=0.0; for(int i=0;i<12;i++){ acc+=texture(uShadowMap,vec3(clamp(pc+PDK[i]*st*2.0,lo,hi),ref)); } if(uShQ<2.5) return acc/12.0; for(int i=0;i<12;i++) acc+=texture(uShadowMap,vec3(clamp(pc-PDK[i].yx*st*1.1,lo,hi),ref)); return acc/24.0; }
 void main(){
   vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n;
   vec3 base=uColor;
@@ -1673,7 +1672,7 @@ function gatherLights(){ if(LIGHTS_F===FRAME) return LIGHTS; LIGHTS_F=FRAME; con
   for(const it of items){ const def=CATALOG[it.type]; if(!def.lights||!it.root) continue; for(const lt of def.lights(it)) if(lt.on>0.01) out.push(lt); }
   { const ll=state.mode==='walk'||xr.session?liftLight():null; if(ll) out.push(ll); }
   { const g=L&&wellOf(L); if(g){ const r=wingRect(g),h=(g.h||L.wallH||3)-0.08; out.push({p:[r.x+r.w/2,h,r.z+r.d/2],c:[1,0.96,0.9],pow:1.6,k:0.2,down:true,sh:false,on:1}); } }
-  const E=xr.session&&xr.rig?[xr.rig.x,0,xr.rig.z]:state.mode==='walk'?[state.cam.x,0,state.cam.z]:(L&&L.hall?[L.hall.x+L.hall.W/2,0,L.hall.z+L.hall.D/2]:EYE),sc=l=>(l.pow||1)*(l.sh?1.3:1)/(1+((l.p[0]-E[0])**2+(l.p[2]-E[2])**2)*0.05);
+  const E0=xr.session&&xr.rig?[xr.rig.x,0,xr.rig.z]:state.mode==='walk'?[state.cam.x,0,state.cam.z]:(L&&L.hall?[L.hall.x+L.hall.W/2,0,L.hall.z+L.hall.D/2]:[0,0,0]); if(Math.hypot(E0[0]-EYE[0],E0[2]-EYE[2])>2.0) EYE=E0; const E=EYE,sc=l=>(l.pow||1)*(l.sh?1.3:1)/(1+((l.p[0]-E[0])**2+(l.p[2]-E[2])**2)*0.05);
   out.sort((a,b)=>sc(b)-sc(a)); LIGHTS=out.slice(0,8);
   // тени: держим тот же набор источников и те же ячейки атласа, пока они среди ближайших — без мигания при ходьбе
   const key=l=>l.p.map(v=>v.toFixed(1)).join(','),prev=SHADOW_KEYS,cand=LIGHTS.filter(l=>l.sh); cand.sort((a,b)=>sc(b)-sc(a)); const rk=new Map(cand.map((l,i)=>[l,i])),keep=l=>prev.has(key(l))&&rk.get(l)<6; cand.sort((a,b)=>(keep(b)?1:0)-(keep(a)?1:0)||sc(b)-sc(a));
@@ -1691,7 +1690,7 @@ function ensureShadow(list){ if(!shadowsAllowed()||SHD.frame===FRAME) return; SH
   const lights=gatherLights().filter(l=>l.tile>=0),cast=[]; let h=q*7+lights.length*131;
   for(const l of lights) h+=l.p[0]*3.1+l.p[1]*5.3+l.p[2]*7.7+l.tile;
   for(const e of list){ if(!e.item||e.bg||!e.mesh||e.node.noDraw||e.node.unlit||e.node.noDepth||e.node.noShadow||e.mat.alpha<1||e.item.ghost||isCeil(e.item)) continue; cast.push(e); const w=e.w; h+=(w[12]*1.3+w[13]*2.9+w[14]*4.1+w[0]+w[2]*1.7+w[5]*0.7)*((cast.length%97)+1); }
-  const sig=h.toFixed(4)+'|'+cast.length; if(sig===SHD.sig) return; SHD.sig=sig;
+  const sig=h.toFixed(4)+'|'+cast.length; if(sig===SHD.sig) return; SHD.sig=sig; SHD.n=(SHD.n||0)+1;
   const pf=gl.getParameter(gl.FRAMEBUFFER_BINDING),pv=gl.getParameter(gl.VIEWPORT),T=SHD.size/2;
   gl.bindFramebuffer(gl.FRAMEBUFFER,SHD.fbo); gl.viewport(0,0,SHD.size,SHD.size); gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND); gl.useProgram(PD.p); gl.uniform1f(PD.u.uFar,SHD.far);
   SHD.vps=[]; for(const l of lights){ const lp=l.p,vp=M4.mul(M4.persp(152*DEG,1,0.05,SHD.far),lookAtM(lp,[lp[0],lp[1]-1,lp[2]],[0,0,-1])); SHD.vps[l.tile]=vp;
