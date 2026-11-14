@@ -9,13 +9,15 @@
 - VR (Quest 2): руки, лучи, телепорт и стик, круглая мини-карта на запястье, настройки, лифт между этажами.
 - Спецификация и коммерческое предложение, синхронизация зала «Отправить в VR» (Netlify Function `site/netlify/functions/room.mjs`).
 
-## Запуск
-- Онлайн: залить папку `site` на Netlify (drag-and-drop).
-- Локально: `python -m http.server 8765` в папке `site`, открыть http://localhost:8765 (не через file://).
-- Quest: `start-vr-usb.bat` / `start-pc-airlink.bat`, сервер `server.ps1`.
+## Где и как хостится
+- **Сайт — Netlify.** Папка `site` заливается на Netlify перетаскиванием (Deploys → drag-and-drop), без сборки: это статические файлы (`index.html`, `m3.js` с моделями, `tex/`, иконки, `manifest.webmanifest`). Netlify сам даёт HTTPS — без него браузер Quest не включает WebXR.
+- **Сервер для «Отправить в VR» — Netlify Functions + Netlify Blobs.** Функция `site/netlify/functions/room.mjs` (настройки в `site/netlify.toml`, зависимость `@netlify/blobs` в `site/package.json`) принимает проект с ПК и выдаёт 4-значный код, шлем по коду скачивает зал. Данные лежат во встроенном хранилище Netlify Blobs — отдельный сервер или база не нужны.
+- **Локально для теста:** `server.ps1` (PowerShell, отдаёт `site` на http://localhost:8080) или `python -m http.server 8765` в папке `site`. Открывать через http, не через file://.
+- **Quest по кабелю или Air Link:** `start-vr-usb.bat` пробрасывает порт в шлем через `adb reverse`, поэтому localhost в браузере Quest считается безопасным адресом и WebXR работает. `start-pc-airlink.bat` — запуск через Air Link, `cast-to-laptop.bat` — трансляция картинки со шлема на ноутбук через scrcpy.
 
 ## Папки
 - `site/` — само приложение, текстуры `site/tex/`, иконки, манифест PWA.
-- `tools/fbx/` — парсер FBX и упаковка мешей в JSON (int16/int8, base64), `tools/blend/` — разбор .blend.
+- `tools/fbx/`, `tools/fbx3/` — парсер FBX (с иерархией и пивотами), упрощение сеток, упаковка в JSON (int16/int8, base64) → `site/m3.js`; `tools/blend/` — разбор .blend (Blender 5, seekable zstd).
+- `models/src3/` — исходники присланных моделей (FBX, .blend).
 - `tests/` — автотесты Playwright (swiftshader, WebXR-мок).
 - `docs/` — схема и каталог моделей для защиты.
