@@ -514,11 +514,15 @@ const FS_LIT=`#version 300 es
 precision highp float;
 in vec3 vN; in vec3 vW; in vec2 vUv; in vec3 vL; in vec3 vLN; out vec4 o;
 uniform vec3 uColor,uCam,uLight,uHlColor; uniform float uSpec,uAlpha,uEmis,uHl,uGrid,uGridStep,uTexMode,uTexScale,uAo,uExp,uShOn,uShTexel; uniform sampler2D uTex; uniform highp sampler2DShadow uShadowMap; uniform mat4 uShVP[4]; uniform vec3 uFP,uFD; uniform float uFOn; uniform float uDay,uLampOn,uShFar,uShQ,uShRes; uniform highp sampler2D uShRaw; uniform int uLN; uniform vec3 uLP[8],uLC[8]; uniform vec2 uLK[8]; uniform float uLT[8];
+const vec2 PDK[12]=vec2[12](vec2(-0.326,-0.406),vec2(-0.840,-0.074),vec2(-0.696,0.457),vec2(-0.203,0.621),vec2(0.962,-0.195),vec2(0.473,-0.480),vec2(0.519,0.767),vec2(0.185,-0.893),vec2(0.507,0.064),vec2(0.896,0.412),vec2(-0.322,-0.933),vec2(-0.792,-0.598));
 float shadowAt(int t,vec3 lp,vec3 wp,float dl){ vec4 sp4=uShVP[t]*vec4(wp,1.0); if(sp4.w<0.01) return 1.0; vec2 pc=sp4.xy/sp4.w*0.5+0.5; if(pc.x<0.003||pc.x>0.997||pc.y<0.003||pc.y>0.997) return 1.0;
   vec2 off=vec2(float(t-2*(t/2)),float(t/2))*0.5; pc=pc*0.5+off; vec2 lo=off+vec2(0.002),hi=off+vec2(0.498); float ref=(length(wp-lp)-0.012-0.003*dl)/uShFar,tx=uShTexel,st=tx; int R=uShQ<1.5?0:1;
   if(uShQ>2.5){ float bs=0.0,bn=0.0; for(int i=-1;i<=1;i++) for(int j=-1;j<=1;j++){ float z=texture(uShRaw,clamp(pc+vec2(float(i),float(j))*tx*4.0,lo,hi)).r; if(z<ref){ bs+=z; bn+=1.0; } }
-    if(bn<0.5) return 1.0; float zb=bs/bn*uShFar,zr=ref*uShFar; float pen=clamp(0.45*uShRes/8.0*(zr-zb)/(zb*zr),0.5,9.0); st=tx*pen*0.5; R=2; }
-  float acc=0.0,cnt=0.0; for(int i=-R;i<=R;i++) for(int j=-R;j<=R;j++){ acc+=texture(uShadowMap,vec3(clamp(pc+vec2(float(i),float(j))*st,lo,hi),ref)); cnt+=1.0; } return acc/cnt; }
+    if(bn<0.5) return 1.0; float zb=bs/bn*uShFar,zr=ref*uShFar; float pen=clamp(0.45*uShRes/8.0*(zr-zb)/(zb*zr),1.0,9.0); st=tx*pen*0.9; }
+  else st=tx*(uShQ<1.5?2.2:1.6);
+  // поворотный пуассоновский диск с шумом по пикселю — мягкий край без лесенки и полос
+  float an=6.2832*fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(0.06711056,0.00583715)))); float ca=cos(an),sa=sin(an); mat2 rot=mat2(ca,sa,-sa,ca);
+  float acc=0.0; for(int i=0;i<12;i++){ acc+=texture(uShadowMap,vec3(clamp(pc+rot*PDK[i]*st*2.0,lo,hi),ref)); } return acc/12.0; }
 void main(){
   vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n;
   vec3 base=uColor;
@@ -1661,7 +1665,7 @@ function allocShadow(size){ if(SHD.size===size&&SHD.tex) return; try{ if(SHD.tex
   }catch(e){ console.warn('тени выключены',e); SHD.on=false; } }
 // источники света: светильники на потолке и подсветка мебели
 let LIGHTS=[],LIGHTS_F=-1;
-let EYE=[0,1.6,0];
+let EYE=[0,1.6,0],SHADOW_KEYS=new Map();
 function flashLight(){ let best=null; for(const it of items){ if(it.type!=='flashlight'||!it.root||!it.root.flashSw) continue; const on=ease(it.root.flashSw.anim.t); if(on<0.01) continue; const held=state.held&&state.held.it===it;
     if(held&&!xr.session){ const {f}=holdPoint(),c=state.cam; return {p:[c.x+f[0]*0.3,c.y-0.15,c.z+f[2]*0.3],d:norm3([f[0],f[1]-0.05,f[2]]),on}; }
     const W=itemWorld(it),p=M4.pt(W,0,0.025,0.13),q=M4.pt(W,0,0.025,1.13),r={p,d:norm3([q[0]-p[0],q[1]-p[1],q[2]-p[2]]),on}; if(isHeld(it)) return r; if(!best) best=r; } return best; }
@@ -1669,8 +1673,14 @@ function gatherLights(){ if(LIGHTS_F===FRAME) return LIGHTS; LIGHTS_F=FRAME; con
   for(const it of items){ const def=CATALOG[it.type]; if(!def.lights||!it.root) continue; for(const lt of def.lights(it)) if(lt.on>0.01) out.push(lt); }
   { const ll=state.mode==='walk'||xr.session?liftLight():null; if(ll) out.push(ll); }
   { const g=L&&wellOf(L); if(g){ const r=wingRect(g),h=(g.h||L.wallH||3)-0.08; out.push({p:[r.x+r.w/2,h,r.z+r.d/2],c:[1,0.96,0.9],pow:1.6,k:0.2,down:true,sh:false,on:1}); } }
-  const E=EYE,sc=l=>(l.pow||1)*(l.sh?1.3:1)/(1+((l.p[0]-E[0])**2+(l.p[2]-E[2])**2)*0.05);
-  out.sort((a,b)=>sc(b)-sc(a)); LIGHTS=out.slice(0,8); let t=0; for(const lt of LIGHTS) lt.tile=(lt.sh&&t<4)?t++:-1; return LIGHTS; }
+  const E=xr.session&&xr.rig?[xr.rig.x,0,xr.rig.z]:state.mode==='walk'?[state.cam.x,0,state.cam.z]:(L&&L.hall?[L.hall.x+L.hall.W/2,0,L.hall.z+L.hall.D/2]:EYE),sc=l=>(l.pow||1)*(l.sh?1.3:1)/(1+((l.p[0]-E[0])**2+(l.p[2]-E[2])**2)*0.05);
+  out.sort((a,b)=>sc(b)-sc(a)); LIGHTS=out.slice(0,8);
+  // тени: держим тот же набор источников и те же ячейки атласа, пока они среди ближайших — без мигания при ходьбе
+  const key=l=>l.p.map(v=>v.toFixed(1)).join(','),prev=SHADOW_KEYS,cand=LIGHTS.filter(l=>l.sh); cand.sort((a,b)=>sc(b)-sc(a)); const rk=new Map(cand.map((l,i)=>[l,i])),keep=l=>prev.has(key(l))&&rk.get(l)<6; cand.sort((a,b)=>(keep(b)?1:0)-(keep(a)?1:0)||sc(b)-sc(a));
+  const pick=cand.slice(0,4),used=new Set(),nk=new Map(); for(const l of LIGHTS) l.tile=-1;
+  for(const l of pick){ const t=prev.get(key(l)); if(t!=null&&!used.has(t)){ l.tile=t; used.add(t); } }
+  for(const l of pick) if(l.tile<0){ let t=0; while(used.has(t)) t++; l.tile=t; used.add(t); }
+  for(const l of pick) nk.set(key(l),l.tile); SHADOW_KEYS=nk; return LIGHTS; }
 function lookAtM(eye,tg,up){ const f=norm3([tg[0]-eye[0],tg[1]-eye[1],tg[2]-eye[2]]),sx=norm3([f[1]*up[2]-f[2]*up[1],f[2]*up[0]-f[0]*up[2],f[0]*up[1]-f[1]*up[0]]),u=[sx[1]*f[2]-sx[2]*f[1],sx[2]*f[0]-sx[0]*f[2],sx[0]*f[1]-sx[1]*f[0]],m=M4.ident();
   m[0]=sx[0]; m[4]=sx[1]; m[8]=sx[2]; m[1]=u[0]; m[5]=u[1]; m[9]=u[2]; m[2]=-f[0]; m[6]=-f[1]; m[10]=-f[2]; m[12]=-(sx[0]*eye[0]+sx[1]*eye[1]+sx[2]*eye[2]); m[13]=-(u[0]*eye[0]+u[1]*eye[1]+u[2]*eye[2]); m[14]=f[0]*eye[0]+f[1]*eye[1]+f[2]*eye[2]; return m; }
 function orthoM(l,r,b,t,n,f){ const m=M4.ident(); m[0]=2/(r-l); m[5]=2/(t-b); m[10]=-2/(f-n); m[12]=-(r+l)/(r-l); m[13]=-(t+b)/(t-b); m[14]=-(f+n)/(f-n); return m; }
@@ -1723,7 +1733,6 @@ function inFrustum(P,e){ const mn=e.mesh.mn,mx=e.mesh.mx,w=e.w; if(!mn) return t
   const sc=Math.max(Math.hypot(w[0],w[1],w[2]),Math.hypot(w[4],w[5],w[6]),Math.hypot(w[8],w[9],w[10])),r=0.5*Math.hypot(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2])*sc+0.02;
   for(const p of P) if(p[0]*X+p[1]*Y+p[2]*Z+p[3]<-r) return false; return true; }
 function renderScene(view,proj,camPos,list,opt={}){
-  if(opt.shadows!==false&&!opt.im) EYE=camPos;
   const o=Object.assign({light:LIGHT,ao:1,shadows:true,tint:false,grid:false,exp:1},opt); const vp=M4.mul(proj,view); if(o.shadows) ensureShadow(list);
   gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.disable(gl.BLEND); gl.depthMask(true);
   gl.useProgram(PL.p); gl.uniformMatrix4fv(PL.u.uVP,false,vp); gl.uniform3fv(PL.u.uCam,camPos); gl.uniform3fv(PL.u.uLight,o.light); gl.uniform1f(PL.u.uAo,o.ao); gl.uniform1f(PL.u.uExp,o.exp); gl.uniform1f(PL.u.uGridStep,state.grid.step);
