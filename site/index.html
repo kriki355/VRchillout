@@ -173,6 +173,34 @@ body.inspecting #top,body.inspecting #mapWrap,body.inspecting #hint,body.inspect
 input[type=file]{display:none}
 @media (max-width:900px){ #top .brand span{display:none} #zones{display:none} #editor{width:290px} }
 @media (prefers-reduced-motion:reduce){ #iBar,#iSpecs{transition:none} }
+/* ===== телефоны и планшеты ===== */
+#touchUI,#sheetBtn{display:none} .tOnly{display:none} body.touch .tOnly{display:inline} body.touch .pcOnly{display:none}
+body.touch.walking #touchUI{display:block}
+#joy{position:fixed;left:22px;bottom:26px;width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.28);border:1.5px solid rgba(255,255,255,.7);box-shadow:0 6px 24px rgba(0,0,0,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none;z-index:6}
+#joyK{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 3px 10px rgba(0,0,0,.25);transition:transform .12s}
+#joy.on #joyK{transition:none}
+#tBtns{position:fixed;right:18px;bottom:30px;display:flex;flex-direction:column;gap:10px;z-index:6}
+#tBtns button{width:76px;height:52px;border-radius:16px;font-size:14px;font-weight:600;background:rgba(255,255,255,.88);border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 14px rgba(0,0,0,.16);touch-action:manipulation}
+#tBtns button.on{background:var(--acc,#e9a300);color:#1b1b1b}
+body.touch.walking #hint{display:none!important}
+body.touch.walking #mapWrap{left:auto;right:10px;bottom:auto;top:76px;padding:3px}
+body.touch.walking #minimap{width:112px;height:112px}
+body.touch #pop{max-height:62vh;overflow:auto}
+@media (max-width:760px){
+  #top{left:6px;right:6px;top:6px;padding:5px 6px;overflow-x:auto;scrollbar-width:none;gap:6px}
+  #top::-webkit-scrollbar{display:none}
+  #top button{font-size:13px;padding:7px 10px;flex:none}
+  #etools{left:6px;right:6px;bottom:6px;transform:none;overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+  #etools::-webkit-scrollbar{display:none}
+  #etools button{flex:none}
+  #editor{left:0!important;right:0;width:auto!important;top:auto!important;bottom:62px!important;height:52vh;border-radius:20px 20px 0 0!important;animation:none}
+  body.sheetOff #editor{display:none!important}
+  body.editing #sheetBtn{display:flex;position:fixed;right:12px;bottom:70px;z-index:6;height:44px;padding:0 16px;border-radius:22px;align-items:center;gap:6px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+  body.editing:not(.sheetOff) #sheetBtn{bottom:calc(52vh + 72px)}
+  .cardI{touch-action:pan-y}
+  #selbar{max-width:96vw;overflow-x:auto}
+}
+
 
 /* ===== редактор v25: этажи, вкладки, аккордеоны ===== */
 #editor{width:344px;bottom:82px}
@@ -424,7 +452,7 @@ button.primary:hover:not(:disabled){box-shadow:0 6px 16px rgba(233,162,11,.35);t
   <section id="tab-furn" class="tabBody">
     <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/></svg><input id="catQ" type="search" placeholder="Найти: стол, кресло, свет" autocomplete="off"></label>
     <div class="chips" id="chips"></div>
-    <div class="dhint"><svg viewBox="0 0 22 16"><rect x="1" y="2" width="8" height="7" rx="1.5"/><path d="M13 13h8" stroke-dasharray="2 2"/><g class="hand"><path d="M6 10l2 4 1.5-2 2 2"/></g></svg>Тяните карточку в зал или нажмите, а потом на пол</div>
+    <div class="dhint"><svg viewBox="0 0 22 16"><rect x="1" y="2" width="8" height="7" rx="1.5"/><path d="M13 13h8" stroke-dasharray="2 2"/><g class="hand"><path d="M6 10l2 4 1.5-2 2 2"/></g></svg><span class='pcOnly'>Тяните карточку в зал или нажмите, а потом на пол</span><span class='tOnly'>Нажмите на карточку, потом коснитесь пола</span></div>
     <div id="cards"></div>
   </section>
   </div>
@@ -459,6 +487,8 @@ button.primary:hover:not(:disabled){box-shadow:0 6px 16px rgba(233,162,11,.35);t
 <div id="specP" class="panel"></div>
 <div id="mapWrap" class="panel" title="План зала: кликните, чтобы перейти"><canvas id="minimap" width="400" height="400"></canvas></div>
 <div id="hint" class="panel"></div>
+<div id="touchUI"><div id="joy"><div id="joyK"></div></div><div id="tBtns"><button id="tTake">Взять</button><button id="tCrouch">Присесть</button></div></div>
+<button id="sheetBtn" class="panel">Каталог</button>
 <div id="lvBadge" class="panel"></div>
 <div id="toast" class="panel"></div>
 <div id="syncP" class="panel"></div>
@@ -1226,9 +1256,54 @@ const OPEN_KINDS={
   arch:{name:'Проём без двери',w:1.2,min:0.6,max:4.0,ht:true,y0:()=>0,y1:H=>Math.min(2.2,H-0.2),icon:'<path d="M5 23V4h16v19"/><path d="M3 23h20"/>'},
   gate:{name:'Ворота',w:3.0,min:2.4,max:5.0,y0:()=>0,y1:H=>Math.min(3.0,H-0.35),icon:'<rect x="3" y="4" width="20" height="19" rx="1"/><path d="M3 9h20M3 14h20M3 19h20"/>'}};
 let roomSegs=[],oidSeq=1;
-const DEMO={version:4,wallH:3,hall:{x:0,z:0,W:22,D:14,floor:'tile',wall:'plaster',ceil:'armstrong'},wings:[{side:'N',offset:8.5,w:5,d:4.5,h:2.7,floor:'laminate',wall:'wood',ceil:'woodslat'}],
-  levels:[{wallH:3.2,hall:{x:0,z:0,W:22,D:14,floor:'parquet',wall:'brick',ceil:'grill'},wings:[],items:[{type:'wardrobe2',x:1.0,z:0.85},{type:'drawers',x:2.9,z:0.35},{type:'garderob',x:4.3,z:0.4,variant:2},{type:'wardrobe1',x:5.4,z:0.4,variant:2},{type:'loftdesk2',x:4.6,z:4.6},{type:'loftchair',x:4.0,z:3.6,variant:2},{type:'loftchair',x:5.2,z:3.6,variant:2},{type:'loftchair',x:4.0,z:5.6,rot:180,variant:2},{type:'loftchair',x:5.2,z:5.6,rot:180,variant:2},{type:'laptop',x:4.0,z:4.3,y:-1},{type:'laptop',x:5.2,z:4.3,y:-1},{type:'laptop',x:4.0,z:4.9,rot:180,y:-1},{type:'laptop',x:5.2,z:4.9,rot:180,y:-1},{type:'gamedesk',x:9.0,z:1.0},{type:'gamechair',x:9.0,z:1.95,rot:180,variant:1},{type:'laptop',x:9.0,z:0.8,y:-1},{type:'standdesk',x:11.8,z:1.2},{type:'laptop',x:11.8,z:1.0,y:-1},{type:'desklamp',x:12.3,z:1.0,y:-1,variant:1},{type:'loftchair',x:11.8,z:2.1,rot:180,variant:11},{type:'sofa',x:9.4,z:11.3,rot:180},{type:'loftdesk3',x:9.4,z:9.9},{type:'books',x:9.6,z:9.9,y:-1,variant:1},{type:'loftpouf',x:7.9,z:9.7,variant:6},{type:'flower',x:11.3,z:11.6},{type:'mobboard',x:14.5,z:5.0,rot:270},{type:'roundtable',x:13.0,z:8.0},{type:'loftstul',x:13.0,z:9.3,rot:180,variant:2},{type:'loftstul',x:14.13,z:7.35,rot:300,variant:2},{type:'loftstul',x:11.87,z:7.35,rot:60,variant:2},{type:'saladette',x:17.6,z:0.4},{type:'telega',x:19.0,z:0.5,variant:1},{type:'workbench',x:20.0,z:6.0,rot:270},{type:'extinguisher',x:16.0,z:13.7},{type:'lamp_round',x:4.6,z:4.6},{type:'lamp_square',x:9.0,z:2.0},{type:'lamp_round',x:9.4,z:10.2},{type:'lamp_square',x:13.0,z:7.5},{type:'lamp_round',x:18.5,z:4.0},{type:'lamp_square',x:12.0,z:1.5}]}],
-  items:[{type:'cabinet',x:0.5,z:0.3},{type:'cabinet',x:1.45,z:0.3,variant:1},{type:'desk',x:3.9,z:2.4},{type:'loftchair',x:3.9,z:3.3,rot:180},{type:'pedestal',x:5.0,z:2.45,variant:1},{type:'laptop',x:3.9,z:2.15,y:-1},{type:'desklamp',x:4.6,z:2.2,y:-1},{type:'books',x:3.1,z:2.3,y:-1},{type:'garderob',x:6.3,z:0.4},{type:'flower',x:0.45,z:4.0},{type:'mobboard',x:1.0,z:6.0,rot:90},{type:'gamedesk',x:3.6,z:6.4},{type:'gamechair',x:3.6,z:7.35,rot:180},{type:'laptop',x:3.6,z:6.2,y:-1},{type:'standdesk',x:6.6,z:6.6,rot:90,variant:1},{type:'laptop',x:6.45,z:6.6,rot:90,y:-1},{type:'desklamp',x:6.5,z:7.1,rot:90,y:-1,variant:2},{type:'loftdesk2',x:11.2,z:3.0},{type:'loftchair',x:10.6,z:2.0,variant:4},{type:'loftchair',x:11.8,z:2.0,variant:4},{type:'loftchair',x:10.6,z:4.0,rot:180,variant:4},{type:'loftchair',x:11.8,z:4.0,rot:180,variant:4},{type:'books',x:12.3,z:3.3,y:-1,variant:1},{type:'whiteboard',x:8.8,z:3.0,rot:90},{type:'flower',x:13.8,z:0.5},{type:'chester',x:3.6,z:13.3,rot:180},{type:'loftdesk3',x:3.6,z:11.7},{type:'loftpouf',x:1.3,z:11.7,variant:6},{type:'loftpouf',x:5.9,z:11.7,variant:8},{type:'flower',x:0.45,z:13.5},{type:'flower',x:6.8,z:13.5},{type:'cakecase',x:11.2,z:13.45,rot:180},{type:'minifridge',x:9.3,z:13.6,rot:180},{type:'sinktable',x:13.95,z:13.55,rot:180},{type:'prodtable',x:12.4,z:9.6},{type:'microwave',x:12.0,z:9.6,y:-1,variant:1},{type:'roundtable',x:9.6,z:9.2},{type:'loftstul',x:9.6,z:10.5,rot:180,variant:6},{type:'loftstul',x:10.73,z:8.55,rot:300,variant:6},{type:'loftstul',x:8.47,z:8.55,rot:60,variant:6},{type:'oven4',x:16.0,z:0.55},{type:'oven2',x:18.0,z:0.55},{type:'saladette',x:17.2,z:3.4},{type:'workbench',x:21.4,z:3.2,rot:270},{type:'telega',x:21.6,z:5.4,rot:270,variant:0},{type:'toolcab',x:21.6,z:7.4,rot:270,variant:1},{type:'shelving',x:21.7,z:9.6,rot:270},{type:'drawers',x:16.0,z:13.7,rot:180},{type:'wardrobe1',x:17.0,z:13.75,rot:180},{type:'extinguisher',x:15.0,z:0.3},{type:'extinguisher',x:0.3,z:9.0},{type:'lamp_round',x:3.9,z:3.0},{type:'lamp_square',x:3.6,z:6.8},{type:'lamp_round',x:11.2,z:3.0},{type:'lamp_square',x:3.6,z:11.8},{type:'lamp_round',x:9.6,z:9.6},{type:'lamp_square',x:11.5,z:12.2},{type:'lamp_round',x:17.0,z:2.5},{type:'lamp_square',x:19.5,z:7.0},{type:'lamp_round',x:17.5,z:11.5},{type:'lamp_square',x:7.2,z:9.8},{type:'loftdesk3',x:11.0,z:-2.4},{type:'loftstul',x:11.0,z:-1.3,rot:180,variant:1},{type:'loftstul',x:11.0,z:-3.5,variant:1},{type:'mobboard',x:9.0,z:-2.4,rot:90},{type:'lamp_round',x:11.0,z:-2.3}]};
+const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'laminate',wall:'plaster',ceil:'stretch'},
+  wings:[{side:'N',offset:9,w:6,d:4.5,h:2.8,floor:'parquet',wall:'wood',ceil:'woodslat'},{side:'E',offset:6.5,w:5.5,d:6,h:3.2,floor:'epoxy',wall:'subway',ceil:'rack'},{side:'W',offset:1,w:5,d:4.5,h:3.0,floor:'epoxy',wall:'concrete',ceil:'grill'}],
+  items:[
+    // опенспейс
+    {type:'cabinet',x:6.0,z:0.3},{type:'cabinet',x:6.95,z:0.3,variant:1},{type:'flower',x:0.45,z:5.4},
+    {type:'loftdesk1',x:4.4,z:2.8},{type:'loftchair',x:3.7,z:2.0},{type:'loftchair',x:5.1,z:2.0},{type:'loftchair',x:3.7,z:3.6,rot:180},{type:'loftchair',x:5.1,z:3.6,rot:180},
+    {type:'laptop',x:3.7,z:2.55,y:-1},{type:'laptop',x:5.1,z:2.55,y:-1},{type:'laptop',x:3.7,z:3.05,rot:180,y:-1},{type:'laptop',x:5.1,z:3.05,rot:180,y:-1},{type:'desklamp',x:5.45,z:2.6,y:-1},{type:'books',x:3.2,z:2.8,y:-1},
+    {type:'standdesk',x:8.0,z:1.0},{type:'laptop',x:8.0,z:0.85,y:-1},{type:'desklamp',x:8.5,z:0.85,y:-1,variant:1},{type:'loftchair',x:8.0,z:1.9,rot:180,variant:11},
+    // игровая зона
+    {type:'gamedesk',x:8.0,z:5.0},{type:'gamechair',x:8.0,z:5.95,rot:180,variant:1},{type:'laptop',x:8.0,z:4.8,y:-1},
+    {type:'mobboard',x:0.9,z:7.6,rot:90},{type:'flower',x:0.45,z:6.4},
+    // ресепшн и лаунж у входа
+    {type:'chester',x:3.6,z:11.3,rot:180},{type:'loftdesk3',x:3.6,z:9.8},{type:'books',x:3.8,z:9.8,y:-1,variant:1},{type:'loftpouf',x:1.6,z:9.8,variant:6},{type:'loftpouf',x:5.6,z:9.8,variant:8},{type:'flower',x:0.45,z:11.5},{type:'flower',x:7.0,z:11.5},
+    // кафе
+    {type:'minifridge',x:11.0,z:11.6,rot:180},{type:'cakecase',x:12.8,z:11.45,rot:180},{type:'sinktable',x:14.8,z:11.55,rot:180},{type:'prodtable',x:16.9,z:11.6,rot:180},{type:'microwave',x:16.6,z:11.6,rot:180,y:-1,variant:1},
+    {type:'roundtable',x:11.2,z:8.0},{type:'loftstul',x:11.2,z:9.3,rot:180,variant:6},{type:'loftstul',x:12.33,z:7.35,rot:300,variant:6},{type:'loftstul',x:10.07,z:7.35,rot:60,variant:6},
+    {type:'roundtable',x:14.8,z:8.0},{type:'loftstul',x:14.8,z:9.3,rot:180,variant:2},{type:'loftstul',x:15.93,z:7.35,rot:300,variant:2},{type:'loftstul',x:13.67,z:7.35,rot:60,variant:2},
+    {type:'extinguisher',x:0.3,z:8.8},{type:'extinguisher',x:19.7,z:11.6},
+    // вторая рабочая группа и презентация
+    {type:'loftdesk1',x:15.6,z:2.8},{type:'loftchair',x:14.9,z:2.0,variant:2},{type:'loftchair',x:16.3,z:2.0,variant:2},{type:'loftchair',x:14.9,z:3.6,rot:180,variant:2},{type:'loftchair',x:16.3,z:3.6,rot:180,variant:2},
+    {type:'laptop',x:14.9,z:2.55,y:-1},{type:'laptop',x:16.3,z:2.55,y:-1},{type:'laptop',x:14.9,z:3.05,rot:180,y:-1},{type:'laptop',x:16.3,z:3.05,rot:180,y:-1},
+    {type:'shelving',x:19.6,z:2.8,rot:270},{type:'flower',x:19.5,z:0.5},{type:'whiteboard',x:17.0,z:5.6,rot:180},
+    // переговорная (северный отсек)
+    {type:'loftdesk2',x:12.0,z:-2.3},{type:'loftchair',x:11.4,z:-3.3,variant:4},{type:'loftchair',x:12.6,z:-3.3,variant:4},{type:'loftchair',x:11.4,z:-1.3,rot:180,variant:4},{type:'loftchair',x:12.6,z:-1.3,rot:180,variant:4},
+    {type:'laptop',x:11.4,z:-2.6,y:-1},{type:'laptop',x:12.6,z:-2.0,rot:180,y:-1},{type:'mobboard',x:9.6,z:-2.3,rot:90},{type:'flower',x:14.5,z:-4.0},{type:'books',x:12.9,z:-2.6,y:-1},
+    // пекарня (восточный отсек)
+    {type:'oven4',x:25.4,z:7.6,rot:270},{type:'oven2',x:25.4,z:10.2,rot:270},{type:'saladette',x:22.3,z:6.9},{type:'sinktable',x:22.4,z:11.55,rot:180},{type:'extinguisher',x:20.3,z:6.8},{type:'prodtable',x:23.0,z:9.2},{type:'books',x:23.4,z:9.2,y:-1,variant:1},
+    // мастерская (западный отсек)
+    {type:'workbench',x:-4.0,z:3.5,rot:90},{type:'telega',x:-3.4,z:1.5},{type:'toolcab',x:-1.6,z:1.4,variant:1},{type:'shelving',x:-2.6,z:5.6,rot:180},
+    // свет
+    {type:'lamp_round',x:4.4,z:2.8},{type:'lamp_square',x:8.0,z:3.0},{type:'lamp_round',x:3.6,z:10.0},{type:'lamp_square',x:4.0,z:6.6},{type:'lamp_round',x:11.2,z:8.0},{type:'lamp_round',x:14.8,z:8.0},{type:'lamp_square',x:13.5,z:11.0},{type:'lamp_square',x:16.5,z:3.5},{type:'lamp_square',x:8.5,z:9.0},
+    {type:'lamp_round',x:12.0,z:-2.3},{type:'lamp_square',x:23.0,z:8.2},{type:'lamp_square',x:23.0,z:10.6},{type:'lamp_round',x:-2.2,z:3.5}],
+  levels:[{wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'parquet',wall:'brick',ceil:'grill'},wings:[],items:[
+    // кабинет руководителя
+    {type:'garderob',x:6.0,z:0.4,variant:2},{type:'wardrobe1',x:7.1,z:0.4,variant:2},{type:'drawers',x:8.3,z:0.35},
+    {type:'wardrobe2',x:18.8,z:1.1,rot:270},{type:'desk',x:17.0,z:2.4},{type:'loftchair',x:17.0,z:1.5,variant:2},{type:'laptop',x:17.0,z:2.2,y:-1},{type:'desklamp',x:17.7,z:2.25,y:-1,variant:2},{type:'books',x:16.3,z:2.3,y:-1,variant:1},{type:'pedestal',x:15.7,z:1.4,variant:1},
+    {type:'loftstul',x:16.4,z:3.6,rot:180,variant:2},{type:'loftstul',x:17.6,z:3.6,rot:180,variant:2},{type:'flower',x:19.5,z:4.2},
+    // коворкинг
+    {type:'loftdesk2',x:10.0,z:5.4},{type:'loftchair',x:9.4,z:4.4,variant:2},{type:'loftchair',x:10.6,z:4.4,variant:2},{type:'loftchair',x:9.4,z:6.4,rot:180,variant:2},{type:'loftchair',x:10.6,z:6.4,rot:180,variant:2},
+    {type:'laptop',x:9.4,z:5.1,y:-1},{type:'laptop',x:10.6,z:5.1,y:-1},{type:'laptop',x:9.4,z:5.7,rot:180,y:-1},{type:'laptop',x:10.6,z:5.7,rot:180,y:-1},
+    {type:'gamedesk',x:10.6,z:1.0},{type:'gamechair',x:10.6,z:1.95,rot:180,variant:0},{type:'laptop',x:10.6,z:0.8,y:-1},
+    {type:'standdesk',x:13.2,z:1.2},{type:'laptop',x:13.2,z:1.0,y:-1},{type:'desklamp',x:13.7,z:1.0,y:-1,variant:1},{type:'loftchair',x:13.2,z:2.1,rot:180,variant:11},
+    {type:'mobboard',x:7.0,z:5.4,rot:90},{type:'chester',x:2.2,z:7.2,rot:90},{type:'loftdesk3',x:3.6,z:7.2},{type:'loftpouf',x:5.0,z:7.2,variant:8},{type:'flower',x:0.45,z:9.0},
+    // лаунж
+    {type:'sofa',x:5.0,z:11.3,rot:180},{type:'loftdesk3',x:5.0,z:9.9},{type:'books',x:5.2,z:9.9,y:-1},{type:'loftpouf',x:3.4,z:9.8,variant:6},{type:'loftpouf',x:6.6,z:9.8,variant:2},{type:'flower',x:0.45,z:11.5},{type:'flower',x:8.0,z:11.5},
+    {type:'roundtable',x:12.5,z:9.0},{type:'loftstul',x:12.5,z:10.3,rot:180,variant:1},{type:'loftstul',x:13.63,z:8.35,rot:300,variant:1},{type:'loftstul',x:11.37,z:8.35,rot:60,variant:1},
+    {type:'extinguisher',x:19.7,z:11.6},
+    {type:'lamp_round',x:17.0,z:2.4},{type:'lamp_square',x:10.0,z:5.4},{type:'lamp_round',x:12.0,z:2.0},{type:'lamp_square',x:3.6,z:7.2},{type:'lamp_round',x:5.0,z:10.2},{type:'lamp_round',x:12.5,z:9.0},{type:'lamp_square',x:8.5,z:7.5}]}]};
 let L=null, items=[], uidSeq=1; const favorites=new Map();
 
 /* ============ Помещение ============ */
@@ -1651,8 +1726,9 @@ precision highp float; in vec3 vW; uniform vec3 uLP; uniform float uFar; void ma
 const PD=compile(VS_D,FS_D), SHD={size:0,fbo:null,tex:null,vps:[],frame:-1,on:true,far:40,sig:'',samp:null};
 let FRAME=0;
 // качество теней: 0 — выкл, 1 — низкое, 2 — среднее, 3 — высокое (мягкая тень, резкая у основания)
+const TOUCH=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&navigator.maxTouchPoints>0),PHONE=TOUCH&&Math.min(screen.width,screen.height)<820;
 const QUAL={k:(()=>{ try{ const v=localStorage.getItem('gfxR'); return v===null?1:Math.max(0,Math.min(2,+v||0)); }catch(_){ return 1; } })()};
-const GFX={pc:(()=>{ try{ const v=+localStorage.getItem('gfxQ'); return isFinite(v)&&localStorage.getItem('gfxQ')!==null?v:3; }catch(_){ return 3; } })()};
+const GFX={pc:(()=>{ try{ const v=+localStorage.getItem('gfxQ'); return isFinite(v)&&localStorage.getItem('gfxQ')!==null?v:(PHONE?1:3); }catch(_){ return 3; } })()};
 function shadowQ(){ return xr.session?((xr.cfg&&xr.cfg.shq!==undefined)?xr.cfg.shq:2):GFX.pc; }
 function allocShadow(size){ if(SHD.size===size&&SHD.tex) return; try{ if(SHD.tex) gl.deleteTexture(SHD.tex); if(SHD.fbo) gl.deleteFramebuffer(SHD.fbo); SHD.tex=SHD.fbo=null;
     const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t); gl.texStorage2D(gl.TEXTURE_2D,1,gl.DEPTH_COMPONENT24,size,size);
@@ -1959,7 +2035,7 @@ function setMode(m){
   if(state.held) releaseHeld(false); if(state.move) endMove(false); if(state.sit){ state.sit=null; state.cam.y=1.65; } state.invalid=null;
   if(state.inspect) finishInspect(); if(state.placeOpen){ const i=L.openings.indexOf(state.placeOpen.o); if(i>=0) L.openings.splice(i,1); state.placeOpen=null; updateOpnUI(); } state.mode=m; state.selected=null; state.selOpen=null; state.odrag=null; state.drag=null; state.place=null; state.wallDrag=null; closePop();
   $('mWalk').classList.toggle('on',m==='walk'); $('mEdit').classList.toggle('on',m==='edit'); modeInd(); if(m==='walk'){ dropBg(); ensureBg(); liftReset(); } state.fh=0;
-  $('editor').style.display=m==='edit'?'flex':'none'; $('etools').style.display=m==='edit'?'flex':'none'; $('mapWrap').style.display=m==='edit'?'none':'block'; $('hint').style.display=m==='edit'?'none':'flex';
+  document.body.classList.toggle('walking',m==='walk'); document.body.classList.toggle('editing',m==='edit'); $('editor').style.display=m==='edit'?'flex':'none'; $('etools').style.display=m==='edit'?'flex':'none'; $('mapWrap').style.display=m==='edit'?'none':'block'; $('hint').style.display=m==='edit'?'none':'flex';
   buildRoom(); rebuildDecor(); setHint(); updateCards();
   if(m==='walk'&&!canStand(state.cam.x,state.cam.z)){ const s=findSpawn(); state.cam.x=s.x; state.cam.z=s.z; state.cam.yaw=0; }
 }
@@ -2020,6 +2096,7 @@ function buildCatalogUI(){
 function updateCards(){ document.querySelectorAll('.cardI').forEach(c=>c.classList.toggle('on',!!(state.place&&state.place.ghost.type===c.dataset.t))); }
 function startPlace(type){ if(state.mode!=='edit') setMode('edit'); if(state.step!==2) setStep(2);
   const g=makeItem({type,x:state.ed.tx,z:state.ed.tz}); g.ghost=true; state.place={ghost:g,moved:false}; state.selected=null; updateSel(); updateCards();
+  if(PHONE&&innerWidth<=760){ document.body.classList.add('sheetOff'); updSheetBtn(); toast('Коснитесь пола или стола — предмет встанет туда',2600); return; }
   toast(CATALOG[type].small?'Кликните по столу или полу, чтобы поставить. R поворачивает, Esc отменяет':'Кликните в комнате, чтобы поставить. R поворачивает, Esc отменяет',2600); }
 function placeAt(it,r){ const sm=isSmall(it); let x,y=0,z;
   if(sm){ const h=pick(r.o,r.d,{exclude:it,itemsOnly:true}); if(h&&h.top){ x=h.point[0]; z=h.point[2]; y=h.point[1]; } else { const f=floorPoint(r); x=f[0]; z=f[2]; } }
@@ -2393,6 +2470,7 @@ mm.addEventListener('click',e=>{ const r=mm.getBoundingClientRect(),X=mapXf(mm.w
 let mouse={down:false,btn:0,x:0,y:0,sx:0,sy:0,moved:false};
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('pointerdown',e=>{
+  if(gestureDown(e)) return;
   canvas.focus(); mouse={down:true,btn:e.button,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false}; try{ canvas.setPointerCapture(e.pointerId); }catch(_){}
   if(state.inspect){ state.inspect.auto=false; return; }
   if(state.mode==='walk'&&e.button===0){ const r=screenRay(e.clientX,e.clientY),h=pick(r.o,r.d); if(h&&h.kind==='item'&&h.node&&h.node.wbBoard&&h.t<5){ state.wb={it:h.item}; h.item.root.wb.last=null; wbDraw(h.item,h.point,'m'); return; } }
@@ -2408,6 +2486,7 @@ canvas.addEventListener('pointerdown',e=>{
   }
 });
 canvas.addEventListener('pointermove',e=>{
+  if(gestureMove(e)) return;
   if(state.wb){ const r=screenRay(e.clientX,e.clientY),h=pick(r.o,r.d); if(h&&h.kind==='item'&&h.item===state.wb.it&&h.node&&h.node.wbBoard) wbDraw(h.item,h.point,'m'); else state.wb.it.root.wb.last=null; mouse.x=e.clientX; mouse.y=e.clientY; return; }
   const dx=e.clientX-mouse.x,dy=e.clientY-mouse.y;
   if(mouse.down&&Math.abs(e.clientX-mouse.sx)+Math.abs(e.clientY-mouse.sy)>4) mouse.moved=true;
@@ -2449,8 +2528,38 @@ addEventListener('pointerup',e=>{ const cd=state.cardDrag; if(!cd) return; docum
   if(iss){ state.place=null; state.invalid=null; updateCards(); toast('Здесь не встанет: мешает '+iss+'. Перетащите в свободное место'); sfx('latch'); }
   else { pushHist(); commitPlace(); state.invalid=null; if(moved) toast('Поставили рядом — точно в этом месте было занято'); } });
 addEventListener('pointercancel',()=>{ const cd=state.cardDrag; if(!cd) return; document.body.classList.remove('dragging'); dragChip(cd,0,0,false); if(cd.on&&state.place){ state.place=null; state.invalid=null; updateCards(); } state.cardDrag=null; });
+
+// ===== сенсорное управление: два пальца в редакторе — масштаб, поворот, сдвиг; джойстик и кнопки в прогулке =====
+const TG={p:new Map(),on:false,d:0,a:0,m:null,used:false};
+function tgInfo(){ const [a,b]=[...TG.p.values()]; return {d:Math.hypot(b.x-a.x,b.y-a.y),a:Math.atan2(b.y-a.y,b.x-a.x),m:[(a.x+b.x)/2,(a.y+b.y)/2]}; }
+function gestureDown(e){ if(e.pointerType!=='touch') return false; TG.p.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(TG.p.size===2){ const g=tgInfo(); TG.on=true; TG.used=true; TG.d=g.d; TG.a=g.a; TG.m=g.m;
+    if(state.drag&&state.drag.moved){ const it=state.drag.it,st=state.drag.start; it.x=st.x; it.y=st.y; it.z=st.z; syncRoot(it); hist.undo.pop(); updHist(); it.bad=false; state.invalid=null; }
+    state.drag=null; state.sdrag=null; state.odrag=null; state.wallDrag=null; mouse.down=false; return true; }
+  if(TG.p.size>2) return true; TG.used=false; return false; }
+function gestureMove(e){ if(e.pointerType!=='touch'||!TG.p.has(e.pointerId)) return false; TG.p.get(e.pointerId).x=e.clientX; TG.p.get(e.pointerId).y=e.clientY; if(!TG.on) return false;
+  const g=tgInfo(); if(state.inspect){ state.inspect.zoom=clamp(state.inspect.zoom*g.d/Math.max(1,TG.d),0.6,3.5); }
+  else if(state.mode==='edit'){ const ed=state.ed; ed.dist=clamp(ed.dist*TG.d/Math.max(1,g.d),3,90); let da=g.a-TG.a; if(da>Math.PI) da-=2*Math.PI; if(da<-Math.PI) da+=2*Math.PI; ed.yaw-=da; ed.yawT=ed.yaw;
+    ed.pitch=clamp(ed.pitch+(g.m[1]-TG.m[1])*0.004,0.3,1.5); ed.pitchT=ed.pitch; panView(g.m[0]-TG.m[0],0); }
+  TG.d=g.d; TG.a=g.a; TG.m=g.m; return true; }
+function gestureUp(e){ if(e.pointerType!=='touch') return false; TG.p.delete(e.pointerId); if(TG.p.size<2) TG.on=false; if(TG.used){ if(!TG.p.size) TG.used=false; mouse.down=false; return true; } return false; }
+(()=>{ if(TOUCH) document.body.classList.add('touch'); const joy=$('joy'),k=$('joyK'); let id=null,cx=0,cy=0;
+  const set=(x,y)=>{ let dx=x-cx,dy=y-cy; const r=Math.hypot(dx,dy),R=50; if(r>R){ dx*=R/r; dy*=R/r; } k.style.transform=`translate(${dx}px,${dy}px)`; state.joy={x:dx/R,y:dy/R}; };
+  joy.addEventListener('pointerdown',e=>{ e.preventDefault(); id=e.pointerId; try{ joy.setPointerCapture(id); }catch(_){} joy.classList.add('on'); const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; set(e.clientX,e.clientY); });
+  joy.addEventListener('pointermove',e=>{ if(e.pointerId===id) set(e.clientX,e.clientY); });
+  const end=e=>{ if(e.pointerId!==id) return; id=null; state.joy=null; joy.classList.remove('on'); k.style.transform=''; };
+  joy.addEventListener('pointerup',end); joy.addEventListener('pointercancel',end);
+  $('tTake').onclick=()=>{ if(state.held){ releaseHeld(false); $('tTake').textContent='Взять'; return; } const r=canvas.getBoundingClientRect(),ray=screenRay(r.left+r.width/2,r.top+r.height/2),h=pick(ray.o,ray.d);
+    if(h&&h.kind==='item'&&h.t<3.5&&isSmall(h.item)){ takeItem(h.item); $('tTake').textContent='Положить'; } else toast(h&&h.kind==='item'&&h.t<3.5?'Крупный предмет переставляется из его карточки':'Наведите прицел в центре на мелкий предмет'); };
+  $('tCrouch').onclick=()=>{ state.crouch=!state.crouch; $('tCrouch').classList.toggle('on',state.crouch); sfx('ui'); };
+  $('sheetBtn').onclick=()=>{ document.body.classList.toggle('sheetOff'); updSheetBtn(); sfx('ui'); };
+  if(TOUCH){ $('hint').dataset.touch='1'; }
+})();
+function updSheetBtn(){ const b=$('sheetBtn'); if(b) b.textContent=document.body.classList.contains('sheetOff')?'☰ Каталог и настройки':'✕ Скрыть панель'; }
+if(PHONE&&innerWidth<=760) document.body.classList.add('sheetOff'); document.body.classList.toggle('walking',state.mode==='walk'); document.body.classList.toggle('editing',state.mode==='edit'); updSheetBtn();
 function panView(dx,dy){ const c=Math.cos(state.ed.yaw),s=Math.sin(state.ed.yaw),k=state.ed.dist*0.0013; state.ed.tx-=(c*dx+s*dy)*k; state.ed.tz-=(-s*dx+c*dy)*k; }
-canvas.addEventListener('pointerup',e=>{ if(state.wb){ state.wb=null; state.wbBlock=true; setTimeout(()=>state.wbBlock=false,50); }
+canvas.addEventListener('pointercancel',e=>{ TG.p.delete(e.pointerId); if(TG.p.size<2) TG.on=false; mouse.down=false; });
+canvas.addEventListener('pointerup',e=>{ if(gestureUp(e)) return; if(state.wb){ state.wb=null; state.wbBlock=true; setTimeout(()=>state.wbBlock=false,50); }
   const click=mouse.down&&!mouse.moved;
   if(state.inspect){ if(click&&e.button===0) inspectClick(e.clientX,e.clientY); mouse.down=false; return; }
   if(state.mode==='edit'){
@@ -2506,9 +2615,9 @@ function update(dt){
   stepPhysics(dt);
   if((state.mode==='walk'||xr.session)&&PRJ.storeys.length>1){ const [px,pz]=playerXZ(); state.inLift=inCabin(px,pz); liftStep(dt); const prev=state.fh||0,tgt=floorH(px,pz); state.fh=(state.inLift||Math.abs(tgt-prev)>1.2)?tgt:prev+(tgt-prev)*Math.min(1,dt*14); if(!xr.session) state.cam.y+=state.fh-prev; storeyTick(); } else { state.fh=0; state.inLift=false; }
   const s=state.inspect; if(s){ s.t=approach(s.t,s.closing?0:1,dt*(s.closing?4:3)); s.specT=approach(s.specT,s.spec&&!s.closing?1:0,dt*2.4); if(s.auto) s.yaw+=dt*0.25; if(s.closing&&s.t<=0) finishInspect(); return; }
-  if(state.mode==='walk'&&!xr.session){ const k=state.keys,c=state.cam; let f=0,sd=0; if(k.KeyW||k.ArrowUp) f+=1; if(k.KeyS||k.ArrowDown) f-=1; if(k.KeyD||k.ArrowRight) sd+=1; if(k.KeyA||k.ArrowLeft) sd-=1;
+  if(state.mode==='walk'&&!xr.session){ const k=state.keys,c=state.cam; let f=0,sd=0; if(k.KeyW||k.ArrowUp) f+=1; if(k.KeyS||k.ArrowDown) f-=1; if(k.KeyD||k.ArrowRight) sd+=1; if(k.KeyA||k.ArrowLeft) sd-=1; const J=state.joy,jm=J?Math.min(1,Math.hypot(J.x,J.y)):0; if(J&&jm>0.12){ f+=-J.y; sd+=J.x; }
     if(!state.sit){ const ty=(state.crouch?1.02:1.65)+(state.fh||0); c.y+=(ty-c.y)*Math.min(1,dt*7); } else if(state.sit.root&&state.sit.root.swivel){ state.sit.root.swivel.rotY=c.yaw-(state.sit.rot*DEG+Math.PI); }
-    if(f||sd){ if(state.sit) standUp(); state.glide=null; const sp=(state.crouch?0.9:(k.ShiftLeft||k.ShiftRight?3.2:1.8))*dt,l=Math.hypot(f,sd); f/=l; sd/=l; const dx=(-Math.sin(c.yaw)*f+Math.cos(c.yaw)*sd)*sp,dz=(-Math.cos(c.yaw)*f-Math.sin(c.yaw)*sd)*sp; if(canStand(c.x+dx,c.z)) c.x+=dx; if(canStand(c.x,c.z+dz)) c.z+=dz; }
+    if(f||sd){ if(state.sit) standUp(); state.glide=null; const sp=(state.crouch?0.9:(k.ShiftLeft||k.ShiftRight||jm>0.95?3.0:1.8))*dt*(jm>0.12&&!(k.KeyW||k.KeyS||k.KeyA||k.KeyD||k.ArrowUp||k.ArrowDown||k.ArrowLeft||k.ArrowRight)?Math.max(0.35,jm):1),l=Math.hypot(f,sd); f/=l; sd/=l; const dx=(-Math.sin(c.yaw)*f+Math.cos(c.yaw)*sd)*sp,dz=(-Math.cos(c.yaw)*f-Math.sin(c.yaw)*sd)*sp; if(canStand(c.x+dx,c.z)) c.x+=dx; if(canStand(c.x,c.z+dz)) c.z+=dz; }
     if(state.glide){ const g=state.glide; if(g.teleport){ c.x=g.x; c.z=g.z; if(g.yaw!==undefined){ c.yaw=g.yaw; c.pitch=-0.1; } state.glide=null; } else { const dx=g.x-c.x,dz=g.z-c.z,d=Math.hypot(dx,dz); if(d<0.05) state.glide=null; else { const sp=Math.min(d,3*dt),nx=c.x+dx/d*sp,nz=c.z+dz/d*sp; if(canStand(nx,nz)&&!(g.t0&&performance.now()-g.t0>8000)){ c.x=nx; c.z=nz; } else state.glide=null; } } }
     if(state.pop){ const p=state.pop; if(Math.hypot(p.x-c.x,p.z-c.z)>11) closePop(); }
     if(state.held){ const it=state.held.it,{p}=holdPoint(); it.x=p[0]; it.y=p[1]-it.size.h/2; it.z=p[2]; it.rot=((c.yaw/DEG+state.held.rot)%360+360)%360; syncRoot(it); } }
@@ -2520,7 +2629,7 @@ let frameN=0;
 function frame(t){ FRAME++;
   if(xr.session) return;
   const dt=Math.min(0.05,(t-state.lastT)/1000); state.lastT=t; update(dt);
-  const d0=devicePixelRatio||1,dpr=QUAL.k===0?Math.min(d0,1):QUAL.k===1?Math.min(d0,2):Math.min(Math.max(d0*1.6,1.75),3),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr); if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
+  const d0=devicePixelRatio||1,dpr=QUAL.k===0?Math.min(d0,PHONE?1.5:1):QUAL.k===1?Math.min(d0,2):Math.min(Math.max(d0*1.6,1.75),3),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr); if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
   if(state.inspect){ renderInspect(w,h); requestAnimationFrame(frame); return; }
   const cw=camWorld(),view=M4.inv(cw),pr=mainProj(),vp=M4.mul(pr,view); state.lastVP=vp;
   if(state.mode==='edit'){ const e=state.ed,k=e.dist*0.075,wy=0.35+0.35*k/0.6,fx=-cw[8],fz=-cw[10],fl=Math.hypot(fx,fz)||1;
