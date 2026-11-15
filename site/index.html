@@ -1004,7 +1004,7 @@ function sinkTap(root){ const P0=[]; for(const n of root.children){ if(!n.mesh||
   const T=F.filter(p=>dist(p)>md*0.8); let ty=1e9; for(const p of T) ty=Math.min(ty,p[1]); const TT=T.filter(p=>p[1]<ty+0.015),tx=TT.reduce((a,p)=>a+p[0],0)/TT.length,tz=TT.reduce((a,p)=>a+p[2],0)/TT.length;
   const bot=P0.filter(p=>Math.abs(p[0]-tx)<0.05&&Math.abs(p[2]-tz)<0.05&&p[1]<ty-0.08&&p[1]>0.3).reduce((a,p)=>Math.min(a,p[1]),ty-0.3),L=Math.max(0.08,ty-0.004-bot);
   const wat=mat([0.62,0.78,0.92],0.95,{alpha:0.5,noTex:true}),wf=G(root,tx,ty-0.002,tz,{anim:anim('scaleY',1,'Кран — вода')}); wf.anim.rate=3; C(wf,0.0065,L,wat,0,-L/2,0,{seg:14}); C(wf,0.004,L,mat([0.8,0.9,1],0.95,{alpha:0.6,noTex:true}),0.001,-L/2,0.001,{seg:10}); C(wf,0.035,0.003,wat,0,-L+0.002,0,{seg:18});
-  const hit=root.add(new Node({mesh:BOX(0.1,ym-y0+0.02,0.1),mat:wat,pos:[bx,(ym+y0)/2,bz]})); hit.noDraw=true; hit.trig=wf; }
+  const hit=root.add(new Node({mesh:BOX(0.2,ym-y0+0.05,0.18),mat:wat,pos:[bx,(ym+y0)/2+0.01,bz]})); hit.noDraw=true; hit.trig=wf; hit.tapHit=true; }
 // z лицевой поверхности корпуса в точке (x,y): по вершинам, смотрящим вперёд
 function surfZ(root,x,y,def){ let best=-1e9; for(const n of root.children){ if(!n.mesh||!n.mesh.g||n.anim) continue; const P=n.mesh.g.pos,N=n.mesh.g.nrm; for(let i=0;i<P.length;i+=3) if(N[i+2]>0.6&&Math.abs(P[i]-x)<0.05&&Math.abs(P[i+1]-y)<0.06&&P[i+2]>best) best=P[i+2]; } return best>-1e8?best:def; }
 function ovenPanel(root,ds){ const btnM=mat(hex('#2b2d31'),0.5,{noTex:true}),ring=mat(hex('#c9ccd0'),0.75,{noTex:true});
@@ -1085,6 +1085,7 @@ const TX={
   glaze:()=>GT('glaze',(x,w,h)=>{ x.fillStyle='#ffffff'; x.fillRect(0,0,w,h); const r=rnd(8); for(let y=0;y<h;y++){ x.fillStyle=`rgba(0,0,0,${Math.max(0,Math.sin(y*0.09+Math.sin(y*0.013)*4))*0.06})`; x.fillRect(0,y,w,1); } speckle(x,w,h,2200,['rgba(60,45,30,.55)','rgba(110,90,70,.4)','rgba(255,255,255,.6)'],2.2,9); }),
   wax:()=>GT('wax',(x,w,h)=>{ x.fillStyle='#ffffff'; x.fillRect(0,0,w,h); const r=rnd(19); for(let i=0;i<60;i++){ x.strokeStyle=`rgba(200,180,150,${r()*0.18})`; x.lineWidth=r()*6+1; x.beginPath(); const X=r()*w; x.moveTo(X,0); x.bezierCurveTo(X+r()*30-15,h*0.3,X+r()*30-15,h*0.7,X+r()*20-10,h); x.stroke(); } },256,256),
   grate:()=>GT('grate',(x,w,h)=>{ x.fillStyle='#d6d9dc'; x.fillRect(0,0,w,h); x.fillStyle='#1a1b1d'; for(let i=0;i<16;i++) for(let j=0;j<16;j++){ rrect(x,i*w/16+3,j*h/16+3,w/16-6,h/16-6,3); x.fill(); } },256,256),
+  plastic:()=>GT('plastic',(x,w,h)=>{ x.fillStyle='#ffffff'; x.fillRect(0,0,w,h); speckle(x,w,h,26000,['rgba(0,0,0,.07)','rgba(0,0,0,.04)','rgba(255,255,255,.5)'],1.4,91); },256,256),
   marble:()=>GT('marble',(x,w,h)=>{ x.fillStyle='#ecebe7'; x.fillRect(0,0,w,h); const r=rnd(61); for(let i=0;i<26;i++){ x.strokeStyle=`rgba(${110+r()*40},${110+r()*40},${115+r()*40},${0.15+r()*0.35})`; x.lineWidth=r()*2.4+0.4; x.beginPath(); let X=r()*w,Y=r()*h; x.moveTo(X,Y); for(let k=0;k<12;k++){ X+=r()*80-30; Y+=r()*60-30; x.lineTo(X,Y); } x.stroke(); } speckle(x,w,h,1500,['rgba(140,140,145,.25)','rgba(255,255,255,.5)'],2,62); })
 };
 
@@ -1239,26 +1240,32 @@ const CATALOG={
   saladette:{name:'Стол холодильный саладетта',cat:'production',purpose:'Холодильный стол для пиццерии или кафе: сверху ванны-гастроёмкости под крышками и разделочная доска, снизу два охлаждаемых отсека. Нажмите на крышку, дверцу или кнопку на панели.',
     specs:[['Размер','1370×700 мм'],['Высота','1060 мм с крышками'],['Гастроёмкости','6 × GN 1/6'],['Температура','+2…+8 °C']],materials:'Нержавеющая сталь AISI 304, доска — пищевой полиэтилен',
     variants:[{name:'Нержавейка'}],
-    build(root,v){ const W=1.37,D=0.7,H=0.86,st=mat(hex('#c3c7cb'),0.8),st2=mat(hex('#d4d7da'),0.85),dk=mat(hex('#1d1e21'),0.4,{noTex:true}),ins=mat(hex('#e9eaeb'),0.5,{noTex:true}),t=0.02;
+    build(root,v){ const W=1.37,D=0.7,H=0.86,st=mat(hex('#c9ccd0'),0.85,{tex:'brushed',texMode:4,texScale:3}),st2=mat(hex('#d8dbde'),0.95,{tex:'brushed',texMode:4,texScale:5}),dk=mat(hex('#1d1e21'),0.4,{noTex:true}),ins=mat(hex('#e9eaeb'),0.6,{tex:'brushed',texMode:4,texScale:6}),chrome=mat(hex('#e8ebee'),1,{noTex:true}),t=0.02,F=D/2,yb=0.205,dH=H-0.015-yb-0.006;
       for(const sx of [-1,1]) for(const sz of [-1,1]){ C(root,0.025,0.1,st2,sx*(W/2-0.06),0.05,sz*(D/2-0.06),{seg:16}); C(root,0.032,0.012,dk,sx*(W/2-0.06),0.006,sz*(D/2-0.06),{seg:16}); }
-      P(root,W,t,D,st,0,0.11,0); P(root,t,H-0.1,D,st,-W/2+t/2,0.11+(H-0.1)/2,0); P(root,t,H-0.1,D,st,W/2-t/2,0.11+(H-0.1)/2,0); P(root,W,H-0.1,t,st,0,0.11+(H-0.1)/2,-D/2+t/2); P(root,t,H-0.22,D-0.04,st,0,0.11+(H-0.22)/2,0);
-      P(root,W-0.04,0.004,D-0.06,ins,0,0.124,0); for(const x of [-W/4,W/4]){ P(root,W/2-0.06,0.012,D-0.12,mat(hex('#d9dbdc'),0.6,{noTex:true}),x,0.42,0); P(root,0.005,H-0.25,D-0.06,ins,x-W/4+0.025,0.12+(H-0.25)/2,0); }
-      // столешница, борт сзади, ванны с продуктами
+      // корпус: дно, бока, зад, средняя стойка, цоколь с решёткой и пультом
+      P(root,W,t,D,st,0,0.11,0); P(root,t,H-0.1,D,st,-W/2+t/2,0.11+(H-0.1)/2,0); P(root,t,H-0.1,D,st,W/2-t/2,0.11+(H-0.1)/2,0); P(root,W,H-0.1,t,st,0,0.11+(H-0.1)/2,-D/2+t/2);
+      P(root,0.03,H-yb,D-0.03,st,0,yb+(H-yb)/2,0.0); P(root,W,yb-0.11,0.02,st,0,(yb+0.11)/2,F-0.01); P(root,W,0.015,0.02,st,0,H-0.0075,F-0.01);
+      for(let i=0;i<5;i++) P(root,0.62,0.006,0.002,dk,-0.3,0.13+i*0.014,F+0.0005);
+      // камеры: обшивка и решётчатые полки
+      for(const sx of [-1,1]){ const xc=sx*(W/4+0.004),cw=W/2-0.045; P(root,cw,0.004,D-0.06,ins,xc,yb+0.002,0); P(root,cw,dH,0.004,ins,xc,yb+dH/2,-D/2+0.024); P(root,cw,0.004,D-0.06,ins,xc,H-0.017,0);
+        for(const y of [yb+0.22,yb+0.43]){ const sh=G(root,xc,y,0); P(sh,cw-0.02,0.004,D-0.12,mat(hex('#d0d3d6'),0.9,{tex:TX.grate(),texMode:4,texScale:14}),0,0,0); for(const ss of [-1,1]) TB(root,[[xc+ss*(cw/2-0.008),y,-D/2+0.06],[xc+ss*(cw/2-0.008),y,D/2-0.06]],0.004,chrome,{seg:6}); }
+        P(root,0.004,0.06,0.03,dk,sx*(W/2-0.022),yb+0.06,F-0.04); }
+      // столешница, борт, ванны с продуктами
       P(root,W,0.04,D,st,0,H+0.02,0); P(root,W,0.12,0.03,st,0,H+0.1,-D/2+0.015);
-      const food=['#c93a2a','#6aa33f','#f0d36a','#f3efe4','#2d2a24','#e8a04a'],gx=[-0.42,-0.21,0,0.21,0.42,0.63-0.63];
+      const food=['#c93a2a','#6aa33f','#f0d36a','#f3efe4','#2d2a24','#e8a04a'];
       for(let i=0;i<6;i++){ const x=-0.5+i*0.2; P(root,0.18,0.004,0.17,dk,x,H+0.041,-0.13); P(root,0.165,0.004,0.155,mat(hex(food[i]),0.15,{noTex:true}),x,H+0.032,-0.13); for(let k=0;k<9;k++) C(root,0.012,0.008,mat(hex(food[i]).map(c=>c*(0.85+0.3*((k*37)%10)/10)),0.2,{noTex:true}),x-0.05+(k%3)*0.05,H+0.038,-0.18+Math.floor(k/3)*0.05,{seg:8}); }
       const lid=G(root,0,H+0.04,-0.215,{anim:anim('rotX',-1.35,'Крышка ванн')}); lid.anim.rate=1.6; P(lid,1.24,0.012,0.2,st,0,0.006,0.1); P(lid,1.24,0.02,0.012,st2,0,0.012,0.2); P(lid,0.3,0.008,0.03,st2,0,0.004,0.215);
       P(root,1.2,0.022,0.26,mat(hex('#f4f4ef'),0.25,{noTex:true}),-0.03,H+0.051,0.2); P(root,1.2,0.002,0.26,mat(hex('#e6e6df'),0.2,{noTex:true}),-0.03,H+0.0625,0.2);
-      // дверцы на петлях по краям, с ручками-скобами и уплотнителем
-      [[-1,'Левая дверца'],[1,'Правая дверца']].forEach(([s,l])=>{ const hx=s*(W/2-0.01),dw=W/2-0.02,d=G(root,hx,0.13,D/2,{anim:anim('rotY',s*1.7,l)}); d.anim.rate=1.6;
-        P(d,dw,H-0.24,0.04,st,-s*dw/2,(H-0.24)/2,0.02); P(d,dw-0.04,H-0.28,0.006,mat(hex('#2b2d31'),0.3,{noTex:true}),-s*dw/2,(H-0.24)/2,-0.002);
-        P(d,0.02,0.32,0.03,st2,-s*(dw-0.06),(H-0.24)/2,0.06); for(const yy of [0.16,-0.16]) P(d,0.02,0.02,0.04,st2,-s*(dw-0.06),(H-0.24)/2+yy,0.045); });
-      // панель управления: табло с зелёными цифрами и кнопкой
+      // дверцы во всю высоту проёма: нержавейка снаружи, обшивка и уплотнитель внутри, ручка-скоба
+      const dw=W/2-0.022; [[-1,'Левая дверца'],[1,'Правая дверца']].forEach(([s,l])=>{ const d=G(root,s*(W/2-0.004),yb+0.003,F,{anim:anim('rotY',s*1.75,l)}); d.anim.rate=1.6; const cx=-s*dw/2;
+        RB(d,dw,dH,0.045,0.006,st,cx,dH/2,0.0225,{N:4}); P(d,dw-0.05,dH-0.05,0.004,ins,cx,dH/2,-0.002); const g=mat(hex('#2b2d31'),0.3,{noTex:true}); P(d,dw-0.02,0.012,0.008,g,cx,0.012,-0.002); P(d,dw-0.02,0.012,0.008,g,cx,dH-0.012,-0.002); P(d,0.012,dH-0.02,0.008,g,cx-dw/2+0.012,dH/2,-0.002); P(d,0.012,dH-0.02,0.008,g,cx+dw/2-0.012,dH/2,-0.002);
+        const hx=-s*(dw-0.055); for(const yy of [dH/2-0.17,dH/2+0.17]) C(d,0.008,0.03,chrome,hx,yy,0.06,{rotX:Math.PI/2,seg:12}); TB(d,[[hx,dH/2-0.18,0.074],[hx,dH/2+0.18,0.074]],0.0095,chrome,{seg:14}); });
+      // пульт на цоколе справа: табло, кнопка, индикатор — не на дверце
       const pc=mkCanvas(256,128),x=pc.getContext('2d'); x.fillStyle='#1b1c1f'; x.fillRect(0,0,256,128); x.fillStyle='#071108'; rrect(x,14,22,150,84,8); x.fill(); x.fillStyle='#38ff76'; x.font='700 58px "Courier New",monospace'; x.textAlign='center'; x.fillText('+4°',89,84);
       x.fillStyle='#9aa0a6'; x.font='600 18px Arial'; x.fillText('SET',214,48); x.fillText('°C',214,96); if(!TEX.salPanel) TEX.salPanel=texFromCanvas(pc);
-      root.add(new Node({mesh:QUAD(0.24,0.12),mat:mat([1,1,1],0.3,{tex:'salPanel'}),pos:[W/2-0.2,0.115+0.06,D/2+0.001]}));
-      const on=G(root,0,0,0,{anim:anim('glow',1,'Охлаждение',true)}); C(on,0.008,0.004,mat([0.1,0.4,0.15],0.2,{glow:[0.2,1,0.4],glowFull:true,noTex:true}),W/2-0.07,0.2,D/2+0.004,{rotX:Math.PI/2,seg:12});
-      const bt=C(root,0.016,0.012,dk,W/2-0.07,0.15,D/2+0.006,{rotX:Math.PI/2,seg:18}); bt.trig=on; } },
+      P(root,0.19,0.082,0.006,dk,W/2-0.17,0.158,F+0.002); root.add(new Node({mesh:QUAD(0.17,0.075),mat:mat([1,1,1],0.3,{tex:'salPanel',emis:0.3}),pos:[W/2-0.17,0.158,F+0.0052]}));
+      const on=G(root,0,0,0,{anim:anim('glow',1,'Охлаждение',true)}); C(on,0.006,0.004,mat([0.1,0.4,0.15],0.2,{glow:[0.2,1,0.4],glowFull:true,noTex:true}),W/2-0.045,0.18,F+0.004,{rotX:Math.PI/2,seg:12});
+      const bt=C(root,0.013,0.012,dk,W/2-0.045,0.145,F+0.006,{rotX:Math.PI/2,seg:18}); bt.trig=on; } },
   coffee:{name:'Кофемашина рожковая',cat:'catering',small:true,purpose:'Профессиональная однопостовая кофемашина. Нажмите на холдер — он повернётся в группе. Кнопка с чашкой на панели запускает пролив: загорается подсветка группы и течёт кофе. Паровая трубка справа поворачивается, клавиша на боку включает подсветку чашек.',
     specs:[['Размер','360×450 мм'],['Высота','380 мм'],['Бойлер','2,5 л, 93 °C'],['Давление','9 бар'],['Мощность','1,6 кВт']],materials:'Корпус — шлифованная нержавейка, боковые панели — порошковая эмаль, ручка холдера — орех',
     variants:[{name:'Сталь и красный',s:'#b3262c'},{name:'Сталь и чёрный',s:'#1f2024'},{name:'Сталь и белый',s:'#ecebe7'},{name:'Сталь и мята',s:'#8fc4b3'}],
@@ -1315,57 +1322,39 @@ const CATALOG={
       C(root,0.04,0.3,mat([0.85,0.9,0.95],1,{alpha:0.22,noTex:true}),W/2+0.045,0.62,0,{seg:24}); P(root,0.03,0.02,0.02,fr,W/2+0.012,0.62,0); P(root,0.03,0.02,0.02,fr,W/2+0.012,0.4,0);
       const cm=mat(hex('#f6f5f1'),0.2,{noTex:true}); for(let i=0;i<9;i++) LT(root,'pcup',[[0,0],[0.026,0],[0.036,0.075],[0.034,0.075],[0.024,0.004],[0,0.004]],cm,W/2+0.045,0.48+i*0.014,0,{seg:24});
       LT(root,'pcup',[[0,0],[0.026,0],[0.036,0.075],[0.034,0.075],[0.024,0.004],[0,0.004]],cm,0.06,0.598,D/2+0.02,{seg:24}); } },
-  mfu:{name:'МФУ лазерное',cat:'office',small:true,purpose:'Принтер, сканер и копир. Нажмите на крышку сканера — она поднимется, под ней стекло. Лоток бумаги снизу выдвигается. Зелёная кнопка «Печать» на панели — из принтера выезжает лист.',
-    specs:[['Размер','490×450 мм'],['Высота','420 мм'],['Печать','40 стр./мин, A4'],['Сканер','600 dpi, автоподатчик 50 листов'],['Связь','Wi-Fi, Ethernet, USB']],materials:'Корпус — ABS-пластик, стекло сканера — закалённое',
-    variants:[{name:'Белый',b:'#ebebe8',a:'#3a3c40'},{name:'Графит',b:'#3a3c40',a:'#1d1e21'}],
-    build(root,v){ const W=0.49,D=0.45,H=0.42,body=mat(hex(v.b),0.45,{noTex:true}),acc=mat(hex(v.a),0.5,{noTex:true}),dark=mat(hex('#18191b'),0.4,{noTex:true}),paper=mat(hex('#f7f7f4'),0.1,{noTex:true});
-      RB(root,W,0.14,D,0.012,body,0,0.07,0); RB(root,W,0.2,D-0.04,0.012,body,0,0.24,-0.02); P(root,W-0.02,0.075,0.015,dark,0,0.24,D/2-0.04); P(root,W-0.06,0.003,0.12,acc,0,0.205,D/2-0.08);
-      const tr=G(root,0,0,0,{anim:anim('slideZ',0.24,'Лоток бумаги')}); RB(tr,W-0.03,0.1,0.02,0.006,acc,0,0.062,D/2+0.004); P(tr,W-0.06,0.006,D-0.06,acc,0,0.016,0); P(tr,0.215,0.045,0.3,mat(hex('#f2f2ee'),0.1,{tex:TX.pages(),texMode:4,texScale:30}),0,0.044,0);
-      P(tr,0.12,0.012,0.006,dark,0,0.09,D/2+0.015);
-      // выезжающий лист с распечаткой
-      const sc=mkCanvas(256,360),x=sc.getContext('2d'); x.fillStyle='#fbfbf8'; x.fillRect(0,0,256,360); x.fillStyle='#1d3f78'; x.font='700 18px "Golos Text",Arial'; x.fillText('Коммерческое предложение',18,34); x.fillStyle='#8a8d92'; for(let i=0;i<7;i++) x.fillRect(18,54+i*12,200-(i%3)*40,4);
-      const bars=[60,90,72,120,104]; bars.forEach((h,i)=>{ x.fillStyle=['#e9a300','#3f6fb5','#2f8a5c','#c4572e','#7b5cc4'][i]; x.fillRect(30+i*42,300-h,28,h); }); x.fillStyle='#8a8d92'; x.fillRect(18,300,220,2); for(let i=0;i<3;i++) x.fillRect(18,318+i*11,170,3); const sk='mfuSheet'; if(!TEX[sk]) TEX[sk]=texFromCanvas(sc);
-      const sh=G(root,0,0.222,D/2-0.27,{anim:anim('slideZ',0.25,'Печать')}); sh.anim.rate=0.9; sh.add(new Node({mesh:QUAD(0.21,0.29),mat:mat([1,1,1],0.1,{tex:sk}),pos:[0,0.001,0],rotX:-Math.PI/2})); P(sh,0.21,0.0015,0.29,paper,0,0,0);
-      // сканер и крышка
-      P(root,W-0.06,0.002,D-0.12,mat([0.16,0.22,0.28],1,{noTex:true}),0,0.3415,-0.02);
-      const lid=G(root,0,0.343,-D/2+0.02,{anim:anim('rotX',-1.15,'Крышка сканера')}); lid.anim.rate=1.8; RB(lid,W,0.03,D-0.06,0.01,body,0,0.015,(D-0.06)/2); P(lid,W-0.04,0.002,D-0.1,mat(hex('#f0f0ee'),0.2,{noTex:true}),0,-0.0005,(D-0.06)/2);
-      RB(lid,W-0.12,0.05,0.2,0.01,body,-0.03,0.05,0.12); P(lid,W-0.16,0.004,0.19,acc,-0.03,0.077,0.12,{rotX:-0.12}); P(lid,0.2,0.004,0.17,paper,-0.03,0.082,0.13,{rotX:-0.12});
-      // панель управления
-      const pc=mkCanvas(512,256),y=pc.getContext('2d'); y.fillStyle='#16171a'; y.fillRect(0,0,512,256); const g=y.createLinearGradient(0,30,0,226); g.addColorStop(0,'#24476f'); g.addColorStop(1,'#122a45'); y.fillStyle=g; rrect(y,20,24,330,206,12); y.fill();
-      [['Копия','#e9a300'],['Скан','#3fa0e0'],['Печать','#38b46a'],['Факс','#9a7be0']].forEach(([t,c],i)=>{ const X=40+(i%2)*155,Y=46+Math.floor(i/2)*92; y.fillStyle='rgba(255,255,255,.08)'; rrect(y,X,Y,140,80,10); y.fill(); y.fillStyle=c; y.beginPath(); y.arc(X+34,Y+40,16,0,7); y.fill(); y.fillStyle='#fff'; y.font='600 22px "Golos Text",Arial'; y.fillText(t,X+58,Y+48); });
-      y.fillStyle='#2a2c31'; for(let i=0;i<9;i++){ y.beginPath(); y.arc(392+(i%3)*40,60+Math.floor(i/3)*44,15,0,7); y.fill(); } y.fillStyle='#38b46a'; y.beginPath(); y.arc(432,214,24,0,7); y.fill(); const pk='mfuPanel'; if(!TEX[pk]) TEX[pk]=texFromCanvas(pc);
-      const pnl=G(root,0.1,0.322,D/2-0.045,{rotX:-0.55}); RB(pnl,0.25,0.016,0.13,0.006,dark,0,0,0); pnl.add(new Node({mesh:QUAD(0.24,0.12),mat:mat([1,1,1],0.4,{emis:0.55,tex:pk}),pos:[0,0.0085,0],rotX:-Math.PI/2}));
-      const pb=C(pnl,0.011,0.006,mat(hex('#38b46a'),0.6,{glow:[0.4,1,0.6],noTex:true}),0.24*(432/512-0.5),0.011,0.12*(214/256-0.5),{seg:20}); pb.trig=sh;
-      const st=G(root,0,0,0,{anim:anim('glow',1,'Индикатор')}); C(st,0.004,0.004,mat([0.2,0.4,0.25],0.5,{glow:[0.3,1,0.5],glowFull:true,noTex:true}),-W/2+0.04,0.3,D/2-0.028,{rotX:Math.PI/2,seg:10}); sh.anim.link=[st];
-      for(let i=0;i<10;i++) P(root,0.004,0.06,0.03,dark,W/2+0.0005,0.2,-0.12+i*0.012); } },
-  organizer:{name:'Органайзер настольный',cat:'office',small:true,purpose:'Стакан с ручками и карандашами, степлер и блок стикеров на подставке. Нажмите на степлер — он раскроется, на стикеры — верхний листок отогнётся.',
-    specs:[['Размер','260×120 мм'],['Высота','150 мм']],materials:'Подставка — орех, стакан — металлическая сетка, степлер — сталь',
-    variants:[{name:'Орех и чёрный',w:'walnut',m:'#1f2023'},{name:'Светлый дуб и белый',w:'oak_light',m:'#ecebe7'}],
-    build(root,v){ const base=mat([1,1,1],0.35,{tex:v.w,texMode:4,texScale:8}),met=mat(hex(v.m),0.6,{noTex:true}),chrome=mat(hex('#e4e7ea'),1,{noTex:true});
-      RB(root,0.26,0.018,0.12,0.005,base,0,0.009,0);
-      LT(root,'pencup',[[0,0],[0.038,0],[0.04,0.003],[0.04,0.1],[0.037,0.1],[0.037,0.006],[0,0.006]],mat(hex(v.m),0.5,{tex:TX.grate(),texMode:1,texScale:1}),-0.08,0.018,0,{seg:30});
-      const pens=[['#1f4fa8',0.13,0.12,-0.01,0.008],['#c8312c',0.12,-0.1,0.012,0.0],['#f0c419',0.11,0.04,0.12,0.01,6],['#1f2023',0.135,-0.05,-0.13,-0.008],['#2f8a5c',0.125,0.15,0.08,-0.012]];
-      for(const [c,L,rx,rz,o,seg] of pens){ const g=G(root,-0.08+o,0.024,o*0.6,{rotX:rx,rotZ:rz}); C(g,0.0045,L,mat(hex(c),0.55,{noTex:true}),0,L/2,0,{seg:seg||12}); C(g,0.005,0.03,seg?mat(hex('#e7b9a1'),0.2,{noTex:true}):met,0,L-0.012,0,{seg:seg||12}); if(seg) C(g,0.002,0.012,mat(hex('#2a2a2a'),0.3,{noTex:true}),0,L+0.003,0,{seg:8}); else TB(g,[[0.005,L-0.004,0],[0.0065,L-0.03,0],[0.0065,L-0.045,0.0]],0.0012,chrome,{seg:6}); }
-      // степлер
-      RB(root,0.036,0.012,0.13,0.005,met,0.035,0.024,0); const sp=G(root,0.035,0.032,-0.055,{anim:anim('rotX',-0.6,'Степлер')}); sp.anim.rate=3; RB(sp,0.03,0.016,0.13,0.006,chrome,0,0.009,0.058); RB(sp,0.034,0.008,0.07,0.004,met,0,0.019,0.075); C(root,0.008,0.024,chrome,0.035,0.03,-0.058,{rotZ:Math.PI/2,seg:12});
-      // стикеры
-      P(root,0.075,0.035,0.075,mat(hex('#f7e15a'),0.2,{tex:TX.pages(),texMode:4,texScale:60}),0.105,0.0355,0);
-      const nc=mkCanvas(256,256),x=nc.getContext('2d'); x.fillStyle='#fbe874'; x.fillRect(0,0,256,256); x.fillStyle='#1d3f78'; x.font='italic 34px "Segoe Print","Comic Sans MS",cursive'; x.fillText('Позвонить',24,96); x.fillText('заказчику!',30,150); x.strokeStyle='#c8312c'; x.lineWidth=4; x.beginPath(); x.moveTo(30,176); x.quadraticCurveTo(130,196,220,170); x.stroke(); const nk='stickyNote'; if(!TEX[nk]) TEX[nk]=texFromCanvas(nc);
-      const nt=G(root,0.105,0.054,-0.0375,{anim:anim('rotX',-0.75,'Стикер')}); nt.anim.rate=2.6; nt.add(new Node({mesh:QUAD(0.075,0.075),mat:mat([1,1,1],0.15,{tex:nk}),pos:[0,0.0011,0.0375],rotX:-Math.PI/2})); P(nt,0.075,0.001,0.075,mat(hex('#f5df5a'),0.15,{noTex:true}),0,0,0.0375); } },
-  mixer:{name:'Миксер планетарный',cat:'production',small:true,purpose:'Настольный планетарный миксер 7 л. Нажмите на головку — она откинется назад. Рычаг скорости сбоку включает вращение венчика.',
-    specs:[['Размер','240×360 мм'],['Высота','420 мм'],['Дежа','7 л, нержавейка'],['Скорости','10, мощность 800 Вт']],materials:'Корпус — литой алюминий с эмалью, дежа и венчик — нержавейка',
-    variants:[{name:'Красный',c:'#b82a2e'},{name:'Кремовый',c:'#efe4cf'},{name:'Графит',c:'#2f3135'},{name:'Мятный',c:'#9fd1c0'}],
-    build(root,v){ const body=mat(hex(v.c),0.85,{noTex:true}),chrome=mat(hex('#e9ecef'),1,{noTex:true}),st=mat(hex('#cfd2d6'),0.95,{tex:'brushed',texMode:4,texScale:6}),blk=mat(hex('#1a1b1d'),0.5,{noTex:true});
-      RB(root,0.23,0.04,0.34,0.016,body,0,0.02,0); for(const sx of [-1,1]) for(const sz of [-1,1]) C(root,0.012,0.006,blk,sx*0.085,0.003,sz*0.13,{seg:12});
-      RB(root,0.13,0.3,0.12,0.04,body,0,0.19,-0.11); C(root,0.02,0.02,chrome,0,0.3,-0.047,{rotX:Math.PI/2,seg:16});
-      const bowl=G(root,0,0.042,0.05); LT(bowl,'mixbowl',[[0,0],[0.055,0],[0.072,0.012],[0.1,0.05],[0.112,0.135],[0.118,0.142],[0.114,0.146],[0.108,0.136],[0.096,0.052],[0.069,0.016],[0,0.014]],st,0,0,0,{seg:40}); C(bowl,0.07,0.008,chrome,0,0.004,0,{seg:28});
-      for(const sx of [-1,1]) TB(bowl,[[sx*0.106,0.11,0],[sx*0.135,0.105,0],[sx*0.138,0.07,0],[sx*0.1,0.055,0]],0.0055,st);
-      const head=G(root,0,0.345,-0.13,{anim:anim('rotX',-0.62,'Головка')}); head.anim.rate=1.6; RB(head,0.135,0.105,0.33,0.048,body,0,0.0,0.14); C(head,0.042,0.02,chrome,0,0,0.31,{rotX:Math.PI/2,seg:28}); P(head,0.137,0.016,0.2,chrome,0,0.0,0.1);
-      const wh=G(head,0,-0.055,0.19,{anim:anim('spin',16,'Венчик')}); wh.anim.rate=1.4; C(wh,0.011,0.03,chrome,0,0,0,{seg:14}); C(wh,0.016,0.008,chrome,0,-0.018,0,{seg:14});
-      for(let k=0;k<4;k++){ const a=k*Math.PI/4,pts=[]; for(let i=0;i<=32;i++){ const ph=i/32*Math.PI*2,r=0.05*Math.sin(ph)*(0.3+0.7*(1-Math.cos(ph))/2),yy=-0.096+0.074*Math.cos(ph); pts.push([r*Math.cos(a),yy,r*Math.sin(a)]); } TB(wh,pts,0.0016,chrome,{seg:6}); }
-      const lv=G(root,0.067,0.27,-0.1,{anim:anim('rotX',-0.5,'Скорость')}); lv.anim.rate=3; P(lv,0.008,0.012,0.06,chrome,0,0,0.03); C(lv,0.008,0.014,blk,0,0,0.062,{rotZ:Math.PI/2,seg:12}); lv.anim.link=[wh];
-      const bc=mkCanvas(256,64),x=bc.getContext('2d'); x.fillStyle=v.c; x.fillRect(0,0,256,64); x.fillStyle='rgba(255,255,255,.85)'; x.font='italic 700 34px Georgia,serif'; x.textAlign='center'; x.fillText('Baker·Pro',128,44); const bk='mixLogo'+v.c; if(!TEX[bk]) TEX[bk]=texFromCanvas(bc);
-      for(const sx of [-1,1]){ head.add(new Node({mesh:QUAD(0.11,0.028),mat:mat([1,1,1],0.6,{tex:bk}),pos:[sx*0.0685,0.015,0.14],rotY:sx*Math.PI/2})); } } },
+  mfu:{name:'МФУ лазерное',cat:'office',small:true,purpose:'Лазерное МФУ: принтер снизу, сканер с автоподатчиком сверху. Нажмите на крышку сканера — она поднимется, под ней стекло. Крышка автоподатчика открывается отдельно. Лоток бумаги снизу выдвигается, передняя крышка откидывается — внутри картридж. На сенсорном экране нажмите «Печать» — из принтера выедет лист.',
+    specs:[['Габариты','420×390×400 мм'],['Печать','38 стр./мин, A4, 1200 dpi, двусторонняя'],['Сканер','600 dpi, автоподатчик на 50 листов'],['Лоток','250 листов'],['Экран','сенсорный 4,3"'],['Связь','Wi-Fi, Ethernet, USB']],materials:'Корпус — матовый ABS-пластик, стекло сканера — закалённое',
+    variants:[{name:'Белый и графит',b:'#e7e7e4',a:'#3a3c40',t:'#d3d4d2'},{name:'Графит',b:'#45474c',a:'#222327',t:'#38393d'}],
+    build(root,v){ const W=0.42,D=0.39,pl=TX.plastic(),body=mat(hex(v.b),0.35,{tex:pl,texMode:4,texScale:7}),acc=mat(hex(v.a),0.4,{tex:pl,texMode:4,texScale:7}),top=mat(hex(v.t),0.35,{tex:pl,texMode:4,texScale:7}),dark=mat(hex('#141518'),0.45,{noTex:true}),paper=mat(hex('#f7f7f4'),0.08,{noTex:true}),pg=mat(hex('#f4f4f0'),0.05,{tex:TX.pages(),texMode:4,texScale:40});
+      for(const sx of [-1,1]) for(const sz of [-1,1]) C(root,0.012,0.008,dark,sx*(W/2-0.04),0.004,sz*(D/2-0.04),{seg:12});
+      // корпус принтера
+      RB(root,W,0.235,D,0.012,body,0,0.008+0.1175,0,{N:6}); for(let i=0;i<12;i++) P(root,0.002,0.004,0.14,dark,W/2+0.0005,0.06+i*0.011,0.04);
+      // лоток бумаги
+      const tr=G(root,0,0,0,{anim:anim('slideZ',0.2,'Лоток бумаги')}); tr.anim.rate=1.8; RB(tr,W-0.016,0.075,0.016,0.006,acc,0,0.05,D/2+0.002,{N:5}); P(tr,0.14,0.012,0.008,dark,0,0.07,D/2+0.009); P(tr,W-0.04,0.004,D-0.04,acc,0,0.016,0); P(tr,0.216,0.03,0.3,pg,0,0.034,0); for(const sx of [-1,1]) P(tr,0.006,0.035,0.2,acc,sx*0.115,0.036,0.02);
+      // передняя крышка с картриджем внутри
+      P(root,W-0.05,0.115,0.002,dark,0,0.158,D/2+0.001); P(root,0.3,0.07,0.003,mat(hex('#232428'),0.5,{noTex:true}),0,0.16,D/2+0.0022); P(root,0.07,0.016,0.002,mat(hex('#e46a1f'),0.5,{noTex:true}),0,0.185,D/2+0.0038);
+      const fd=G(root,0,0.098,D/2+0.009,{anim:anim('rotX',1.25,'Передняя крышка')}); fd.anim.rate=1.8; RB(fd,W-0.03,0.13,0.014,0.006,body,0,0.065,0.0,{N:5}); P(fd,0.16,0.01,0.006,dark,0,0.115,0.008); P(fd,0.3,0.002,0.004,mat(hex(v.a),0.3,{noTex:true}),0,0.02,0.008);
+      // выходной лоток между принтером и сканером
+      P(root,W-0.06,0.04,0.004,dark,-0.02,0.262,-D/2+0.03); P(root,0.26,0.004,0.24,acc,-0.05,0.247,0.02,{rotX:-0.06}); P(root,0.04,0.04,D-0.02,body,W/2-0.02,0.263,0);
+      const sc=mkCanvas(256,360),x=sc.getContext('2d'); x.fillStyle='#fbfbf8'; x.fillRect(0,0,256,360); x.fillStyle='#1d3f78'; x.font='700 17px "Golos Text",Arial'; x.fillText('Коммерческое предложение',16,34); x.fillStyle='#8a8d92'; for(let i=0;i<7;i++) x.fillRect(16,54+i*12,200-(i%3)*40,4);
+      [60,90,72,120,104].forEach((h,i)=>{ x.fillStyle=['#e9a300','#3f6fb5','#2f8a5c','#c4572e','#7b5cc4'][i]; x.fillRect(30+i*42,300-h,28,h); }); x.fillStyle='#8a8d92'; x.fillRect(16,300,224,2); for(let i=0;i<3;i++) x.fillRect(16,318+i*11,170,3); const sk='mfuSheet'; if(!TEX[sk]) TEX[sk]=texFromCanvas(sc);
+      const sh=G(root,-0.05,0.252,-0.17,{anim:anim('slideZ',0.25,'Печать')}); sh.anim.rate=0.8; sh.add(new Node({mesh:QUAD(0.21,0.297),mat:mat([1,1,1],0.1,{tex:sk}),pos:[0,0.0012,0],rotX:-Math.PI/2})); P(sh,0.21,0.0015,0.297,paper,0,0,0);
+      // сканер: корпус, стекло, крышка с автоподатчиком
+      RB(root,W,0.055,D-0.01,0.01,top,0,0.3075,-0.005,{N:6}); P(root,W-0.06,0.002,D-0.08,mat([0.14,0.2,0.26],1,{noTex:true}),-0.01,0.3355,0.0); P(root,0.025,0.002,D-0.08,dark,W/2-0.035,0.3355,0);
+      const lid=G(root,0,0.336,-D/2+0.015,{anim:anim('rotX',-1.1,'Крышка сканера')}); lid.anim.rate=1.6; RB(lid,W,0.024,D-0.03,0.008,top,0,0.012,(D-0.03)/2,{N:5}); P(lid,W-0.04,0.0015,D-0.07,mat(hex('#f1f1ef'),0.15,{noTex:true}),0,-0.0005,(D-0.03)/2);
+      RB(lid,0.1,0.055,D-0.05,0.012,top,-W/2+0.06,0.05,(D-0.03)/2,{N:5}); P(lid,0.25,0.004,0.26,acc,0.06,0.04,0.2,{rotX:-0.09}); P(lid,0.21,0.008,0.24,pg,0.06,0.047,0.21,{rotX:-0.09}); for(const sx of [-1,1]) P(lid,0.006,0.02,0.12,acc,0.06+sx*0.11,0.052,0.2);
+      const adf=G(lid,-W/2+0.01,0.078,(D-0.03)/2,{anim:anim('rotZ',1.3,'Крышка автоподатчика')}); adf.anim.rate=1.8; RB(adf,0.1,0.012,D-0.05,0.005,acc,0.05,0.0,0); for(let i=0;i<3;i++) C(lid,0.012,0.08,mat(hex('#2a2b2e'),0.4,{noTex:true}),-W/2+0.06,0.052,0.06+i*0.12,{rotZ:Math.PI/2,seg:12});
+      // сенсорная панель
+      const pc=mkCanvas(512,288),y=pc.getContext('2d'),g=y.createLinearGradient(0,0,0,288); g.addColorStop(0,'#1e4a78'); g.addColorStop(1,'#0e2744'); y.fillStyle=g; y.fillRect(0,0,512,288); y.fillStyle='rgba(255,255,255,.85)'; y.font='600 20px "Golos Text",Arial'; y.fillText('12:40   Wi-Fi ●   Тонер 78%',18,32);
+      [['Копия','#e9a300'],['Скан','#3fa0e0'],['Печать','#38b46a'],['Факс','#9a7be0'],['USB','#d0d3d8'],['Настройки','#8a8f98']].forEach(([t,c],i)=>{ const X=16+(i%3)*166,Y=56+Math.floor(i/3)*112; y.fillStyle=i===2?'rgba(56,180,106,.28)':'rgba(255,255,255,.09)'; rrect(y,X,Y,152,100,12); y.fill(); y.fillStyle=c; rrect(y,X+52,Y+14,48,42,8); y.fill(); y.fillStyle='#fff'; y.font='600 21px "Golos Text",Arial'; y.textAlign='center'; y.fillText(t,X+76,Y+86); y.textAlign='left'; });
+      const pk='mfuScreen'; if(!TEX[pk]) TEX[pk]=texFromCanvas(pc);
+      const pn=G(root,0.075,0.3,D/2+0.045,{rotX:0.5}); P(root,0.2,0.026,0.04,dark,0.075,0.295,D/2+0.012); RB(pn,0.24,0.012,0.15,0.008,dark,0,0,0,{N:5}); pn.add(new Node({mesh:QUAD(0.13,0.073),mat:mat([1,1,1],0.6,{emis:0.75,tex:pk}),pos:[-0.03,0.0064,0.0],rotX:-Math.PI/2}));
+      const hb=P(pn,0.04,0.004,0.026,mat([1,1,1],0.1,{noTex:true}),0.0127,0.0062,-0.0096); hb.noDraw=true; hb.trig=sh;
+      const st=G(pn,0,0,0,{anim:anim('glow',1,'Индикатор')}); C(st,0.004,0.003,mat([0.2,0.4,0.25],0.5,{glow:[0.3,1,0.5],glowFull:true,noTex:true}),0.085,0.007,0.05,{seg:10}); sh.anim.link=[st];
+      const pw=C(pn,0.009,0.004,mat(hex('#2a2c31'),0.5,{noTex:true}),0.095,0.007,0.0,{seg:16}); C(pn,0.0095,0.0012,mat([0.2,0.5,0.9],0.5,{emis:0.8,noTex:true}),0.095,0.0095,0.0,{seg:16}); pw.trig=sh;
+      P(root,0.014,0.006,0.002,dark,-W/2+0.05,0.31,D/2-0.009);
+      const lc=mkCanvas(256,48),z=lc.getContext('2d'); z.fillStyle=v.b; z.fillRect(0,0,256,48); z.fillStyle=v.a; z.font='700 26px "Golos Text",Arial'; z.textAlign='center'; z.fillText('LaserPro M40',128,34); const lk='mfuLogo'+v.b; if(!TEX[lk]) TEX[lk]=texFromCanvas(lc);
+      root.add(new Node({mesh:QUAD(0.1,0.019),mat:mat([1,1,1],0.3,{tex:lk}),pos:[-0.12,0.235,D/2+0.0005]})); } },
   doughmix:{name:'Тестомес спиральный',cat:'production',purpose:'Спиральный тестомес на 40 л теста. Нажмите на защитную решётку — она поднимется. Зелёная кнопка на панели запускает вращение дежи и спирали, на табло идёт таймер.',
     specs:[['Размер','520×850 мм'],['Высота','1150 мм'],['Дежа','42 л, до 17 кг теста'],['Скорости','2, мощность 2,2 кВт'],['Напряжение','380 В']],materials:'Корпус — сталь с порошковой эмалью, дежа, спираль и решётка — нержавеющая сталь AISI 304',
     variants:[{name:'Белый',c:'#ecebe7'},{name:'Серый металлик',c:'#9ba0a6'},{name:'Красный',c:'#b3262c'}],
@@ -1386,19 +1375,6 @@ const CATALOG={
       x.fillStyle='#4a4d52'; x.font='600 22px "Golos Text",Arial'; x.fillText('I СКОРОСТЬ    II СКОРОСТЬ',256,188); x.fillText('ТАЙМЕР',256,232); const pk='doughP'; if(!TEX[pk]) TEX[pk]=texFromCanvas(pc);
       root.add(new Node({mesh:QUAD(0.28,0.14),mat:mat([1,1,1],0.4,{tex:pk}),pos:[0,1.12,0.172]}));
       const b1=C(root,0.021,0.014,mat(hex('#2f9a58'),0.6,{glow:[0.4,1,0.6],noTex:true}),-0.28*(0.5-78/512),1.12+0.14*(0.5-86/256),0.175,{rotX:Math.PI/2,seg:20}); b1.trig=bg; const b2=C(root,0.021,0.014,mat(hex('#c62b2b'),0.6,{noTex:true}),0.28*(434/512-0.5),1.12+0.14*(0.5-86/256),0.175,{rotX:Math.PI/2,seg:20}); b2.trig=bg; } },
-  torsher:{name:'Торшер с тканевым абажуром',cat:'light',purpose:'Напольный светильник с льняным абажуром и мраморным основанием. Нажмите ножную кнопку на проводе или сам абажур — свет включится тёплым тоном.',
-    specs:[['Высота','1600 мм'],['Абажур','Ø 460 мм, лён'],['Лампа','E27, LED 12 Вт, 2700 K'],['Основание','мрамор Ø 300 мм']],materials:'Основание — мрамор, стойка — латунь, абажур — натуральный лён',
-    variants:[{name:'Латунь, бежевый лён',p:'#c9a25a',s:'#ece2cf'},{name:'Чёрный, серый лён',p:'#1f2023',s:'#c9c7c2'},{name:'Латунь, терракота',p:'#c9a25a',s:'#c97b5a'}],
-    build(root,v){ const brass=mat(hex(v.p),0.9,{noTex:true}),mar=mat([1,1,1],0.6,{tex:TX.marble(),texMode:1}),blk=mat(hex('#1a1b1d'),0.4,{noTex:true});
-      LT(root,'tbase',[[0,0],[0.148,0],[0.15,0.004],[0.15,0.022],[0.142,0.03],[0,0.03]],mar,0,0,0,{seg:48}); C(root,0.025,0.03,brass,0,0.045,0,{seg:20});
-      C(root,0.011,1.32,brass,0,0.06+0.66,0,{seg:16}); C(root,0.016,0.03,brass,0,0.7,0,{seg:16}); C(root,0.02,0.05,brass,0,1.36,0,{seg:18});
-      TB(root,[[0.02,0.012,0.0],[0.12,0.004,0.06],[0.28,0.004,0.18],[0.4,0.004,0.22]],0.003,blk); const fs=C(root,0.024,0.016,blk,0.42,0.008,0.22,{seg:18});
-      const lg=G(root,0,0,0,{anim:anim('glow',1,'Свет')}); lg.anim.rate=2.6; root.lampSw=lg; fs.trig=lg;
-      const sm=mat(hex(v.s),0.08,{tex:TX.linen(),texMode:1,glow:hex(v.s).map(c=>Math.min(1,c*1.15+0.1))});
-      const sh=LT(lg,'shade46',[[0.23,0],[0.175,0.28],[0.172,0.28],[0.226,0.002]],sm,0,1.3,0,{seg:48}); sh.trig=lg;
-      LT(lg,'srim',[[0.231,-0.002],[0.231,0.004]],brass,0,1.3,0,{seg:48}); for(let k=0;k<3;k++){ const a=k/3*Math.PI*2; TB(lg,[[0,1.4,0],[Math.cos(a)*0.17,1.565,Math.sin(a)*0.17]],0.0025,brass,{seg:6}); }
-      SPHn(lg,0.045,mat([0.9,0.88,0.8],0.3,{glow:[1,0.86,0.62],glowFull:true,noTex:true}),0,1.43,0); },
-    lights:it=>{ const n=it.root.lampSw; return n?[{p:M4.pt(itemWorld(it),0,1.4,0),c:[1,0.8,0.56],pow:1.9,k:0.3,down:false,sh:false,on:ease(n.anim.t)}]:[]; } },
   monstera:{name:'Монстера в бетонном кашпо',cat:'office',purpose:'Живое растение с резными листьями. Нажмите на листья — растение покачнётся, как от сквозняка.',
     specs:[['Высота','1200 мм'],['Кашпо','Ø 400 мм, высота 380 мм'],['Уход','полив раз в неделю, рассеянный свет']],materials:'Кашпо — архитектурный бетон, грунт с дренажом',
     variants:[{name:'Серый бетон',c:[1,1,1]},{name:'Графитовый бетон',c:[0.55,0.55,0.57]},{name:'Белый бетон',c:[1.18,1.17,1.14]}],
@@ -1430,37 +1406,15 @@ const CATALOG={
       root.add(new Node({mesh:QUAD(W-0.012,D-0.012),mat:mat([1,1,1],0.05,{tex:pk}),pos:[0.002,T-0.0028,0],rotX:-Math.PI/2}));
       const cv=G(root,-W/2+0.002,T-0.0015,0,{anim:anim('rotZ',2.9,'Открыть книгу')}); cv.anim.rate=1.6; P(cv,W,0.003,D,cl,W/2,0,0); cv.add(new Node({mesh:QUAD(W-0.004,D-0.004),mat:mat([1,1,1],0.3,{tex:ck}),pos:[W/2,0.0016,0],rotX:-Math.PI/2}));
       cv.add(new Node({mesh:QUAD(W-0.004,D-0.004),mat:mat(hex('#e9dcc0'),0.1,{noTex:true}),pos:[W/2,-0.0016,0],rotX:Math.PI/2})); } },
-  candle:{name:'Свеча',cat:'office',small:true,purpose:'Свеча из соевого воска. Нажмите — фитиль загорится, пламя мягко колышется и подсвечивает стол.',
-    specs:[['Размер','Ø 72 мм'],['Высота','120 мм'],['Время горения','до 40 часов']],materials:'Соевый воск, хлопковый фитиль; стакан — янтарное стекло',
-    variants:[{name:'Столбик, молочная',c:'#f1ead8',g:0},{name:'В янтарном стакане',c:'#efe3c7',g:1},{name:'Столбик, графит',c:'#3b3c40',g:0}],
-    build(root,v){ const wx=mat(hex(v.c),0.25,{tex:TX.wax(),texMode:1}),H=v.g?0.085:0.12,R=v.g?0.03:0.036;
-      const fl=G(root,0,0,0,{anim:anim('glow',1,'Свеча')}); fl.anim.rate=2; root.lampSw=fl;
-      const body=LT(fl,'candle'+v.g,[[0,0],[R,0],[R+0.001,0.003],[R+0.001,H-0.004],[R-0.002,H],[R-0.008,H-0.006],[0.006,H-0.009],[0,H-0.009]],wx,0,v.g?0.006:0,0,{seg:36}); body.trig=fl;
-      const y0=(v.g?0.006:0)+H-0.009; C(root,0.0012,0.012,mat(hex('#1b1b1b'),0.2,{noTex:true}),0,y0+0.005,0,{seg:6});
-      const fz=G(fl,0,y0+0.012,0,{anim:anim('sway',0.12,'Пламя')}); fz.anim.speed=11; fl.anim.link=[fz];
-      fz.add(new Node({mesh:SPH(1),mat:mat([0.95,0.6,0.2],0.2,{glow:[1,0.78,0.38],glowFull:true,noTex:true}),pos:[0,0.009,0],scl:[0.0048,0.012,0.0048]})); fz.add(new Node({mesh:SPH(1),mat:mat([0.5,0.6,0.9],0.2,{glow:[0.75,0.85,1],glowFull:true,noTex:true}),pos:[0,0.003,0],scl:[0.0024,0.0038,0.0024]}));
-      if(v.g){ LT(root,'cjar',[[0,0],[0.036,0],[0.038,0.004],[0.038,0.105],[0.035,0.105],[0.035,0.006],[0,0.006]],mat([0.85,0.55,0.2],1,{alpha:0.45,noTex:true}),0,0,0,{seg:36}); } },
-    lights:it=>{ const n=it.root.lampSw; return n?[{p:M4.pt(itemWorld(it),0,0.16,0),c:[1,0.68,0.36],pow:0.42,k:6,down:false,sh:false,on:ease(n.anim.t)}]:[]; } },
-  vase:{name:'Ваза керамическая',cat:'office',small:true,purpose:'Керамическая ваза ручной работы с глазурью. В высоких — сухие колосья пампасной травы: нажмите, они качнутся. Круглую можно повернуть.',
-    specs:[['Высота','220–320 мм'],['Диаметр','140–180 мм']],materials:'Керамика с реактивной глазурью, сухоцветы',
-    variants:[{name:'Терракота, амфора',c:'#b5643c',s:0},{name:'Молочная, шар',c:'#efede6',s:1},{name:'Графит, цилиндр',c:'#3a3b3f',s:2},{name:'Шалфей, бутыль',c:'#8fa58c',s:3}],
-    build(root,v){ const gm=mat(hex(v.c),0.75,{tex:TX.glaze(),texMode:1});
-      const S=[[[0,0],[0.045,0],[0.06,0.02],[0.085,0.09],[0.082,0.16],[0.05,0.24],[0.04,0.28],[0.05,0.31],[0.046,0.312],[0.036,0.28],[0.04,0.25],[0,0.25]],
-        [[0,0],[0.04,0],[0.07,0.02],[0.09,0.08],[0.088,0.13],[0.06,0.18],[0.035,0.195],[0.038,0.205],[0.033,0.205],[0.03,0.19],[0,0.19]],
-        [[0,0],[0.07,0],[0.072,0.004],[0.072,0.22],[0.066,0.224],[0.064,0.22],[0.064,0.01],[0,0.01]],
-        [[0,0],[0.06,0],[0.066,0.012],[0.068,0.15],[0.05,0.2],[0.022,0.25],[0.02,0.3],[0.024,0.306],[0.018,0.306],[0.016,0.25],[0,0.24]]][v.s];
-      const top=S.reduce((a,p)=>Math.max(a,p[1]),0); const rot=G(root,0,0,0,{anim:anim('rotY',Math.PI,'Повернуть')}); LT(rot,'vase'+v.s,S,gm,0,0,0,{seg:44});
-      if(v.s!==1){ const sw=G(root,0,0,0,{anim:anim('sway',0.08,'Колосья')}); sw.anim.speed=2; const r=rnd(5+v.s),stem=mat(hex('#bfa77e'),0.2,{noTex:true}),fl=mat(hex('#ece2cc'),0.1,{tex:TX.linen(),texMode:1});
-        for(let i=0;i<7;i++){ const a=i*0.9+r(),tilt=0.12+r()*0.22,L=0.35+r()*0.25,b=[Math.cos(a)*0.008,top-0.06,Math.sin(a)*0.008],e=[Math.cos(a)*L*tilt*1.6,top-0.06+L,Math.sin(a)*L*tilt*1.6]; TB(sw,[b,[(b[0]+e[0])*0.45,(b[1]+e[1])/2,(b[2]+e[2])*0.45],e],0.0018,stem,{seg:5});
-          sw.add(new Node({mesh:makeMesh(leafGeom([[0,1],[0.35,0.75],[0.5,0.4],[0.4,0.1],[0,0],[-0.4,0.1],[-0.5,0.4],[-0.35,0.75]],0.035,0.13,0.08,0.4)),mat:fl,pos:e,rotY:a,rotX:-1.2+tilt})); } } } },
-  reception:{name:'Стойка ресепшн с логотипом',cat:'office',purpose:'Стойка администратора: высокая столешница из кварца, фасад из дубовых реек и световой логотип. Нажмите на логотип или кнопку за стойкой — включится подсветка. Ящик тумбы выдвигается со стороны сотрудника.',
+  reception:{name:'Стойка ресепшн с логотипом',cat:'office',purpose:'Стойка администратора: высокая столешница из кварца, фасад из дубовых реек и световой логотип. Нажмите на логотип или кнопку за стойкой — включится подсветка. Тумба с тремя ящиками со стороны сотрудника — ящики выдвигаются, как у шкафов.',
     specs:[['Размер','2200×750 мм'],['Высота','1080 / 740 мм'],['Подсветка','LED 3000 K, логотип — световой короб']],materials:'Фасад — рейки дуба на чёрном основании, столешница — кварцевый агломерат, каркас — ЛДСП',
     variants:[{name:'Дуб и белый кварц',w:'oak_teco',t:'#efeeea'},{name:'Орех и графит',w:'walnut',t:'#3b3c40'},{name:'Светлый дуб и бежевый',w:'oak_light',t:'#e7dfd0'}],
     build(root,v){ const W=2.2,D=0.75,H=1.08,wood=mat([1,1,1],0.35,{tex:v.w,texMode:4,texScale:2.4}),back=mat(hex('#1d1e21'),0.3,{noTex:true}),top=mat(hex(v.t),0.75,{tex:TX.marble(),texMode:4,texScale:0.9}),wh=mat(hex(v.t),0.4,{noTex:true}),F=D/2-0.04;
       P(root,W,H-0.06,0.02,back,0,(H-0.06)/2,F); for(const sx of [-1,1]) RB(root,0.05,H-0.04,D-0.04,0.008,wh,sx*(W/2-0.025),(H-0.04)/2,-0.02);
       const n=Math.floor((W-0.1)/0.046); for(let i=0;i<n;i++) RB(root,0.03,H-0.08,0.022,0.004,wood,-W/2+0.05+0.023+i*(W-0.1)/n,(H-0.08)/2+0.02,F+0.021,{N:4});
-      RB(root,W+0.04,0.035,0.34,0.008,top,0,H-0.0175,F-0.11); P(root,W-0.1,0.03,D-0.2,wh,0,0.74,-0.08); RB(root,0.45,0.66,0.55,0.006,wh,W/2-0.33,0.36,-0.1);
-      const dr=G(root,0,0,0,{anim:anim('slideZ',-0.32,'Ящик')}); RB(dr,0.43,0.18,0.02,0.005,wh,W/2-0.33,0.6,-0.385); P(dr,0.12,0.012,0.012,mat(hex('#c9a25a'),0.9,{noTex:true}),W/2-0.33,0.64,-0.4); P(dr,0.4,0.1,0.48,back,W/2-0.33,0.56,-0.13);
+      RB(root,W+0.04,0.035,0.34,0.008,top,0,H-0.0175,F-0.11); P(root,W-0.1,0.03,D-0.2,wh,0,0.74,-0.08); const pg=G(root,W/2-0.33,0,-0.12,{rotY:Math.PI}),Wp=0.44,Dp=0.5,Hp=0.72,tp=0.018,bp=0.06,fr=mat([1,1,1],0.32,{tex:v.w,texMode:4,texScale:2.4}),hd=mat(hex('#a3a9b0'),0.95,{noTex:true});
+      P(pg,tp,Hp-bp,Dp,wh,-Wp/2+tp/2,bp+(Hp-bp)/2,0); P(pg,tp,Hp-bp,Dp,wh,Wp/2-tp/2,bp+(Hp-bp)/2,0); P(pg,Wp,tp,Dp,wh,0,Hp-tp/2,0); P(pg,Wp-2*tp,tp,Dp,wh,0,bp+tp/2,0); P(pg,Wp-2*tp,bp,0.02,back,0,bp/2,Dp/2-0.03); P(pg,Wp-2*tp,Hp-bp-tp,0.008,wh,0,bp+(Hp-bp)/2,-Dp/2+0.004);
+      const d1=drawer(pg,Wp,Dp,Hp-0.08,0.14,fr,MAT.liner,hd,tp,0.34); P(d1,0.22,0.02,0.3,MAT.paper,0,-0.035,0); drawer(pg,Wp,Dp,Hp-0.225,0.14,fr,MAT.liner,hd,tp,0.34); const d3=drawer(pg,Wp,Dp,bp+0.155,0.3,fr,MAT.liner,hd,tp,0.34); P(d3,0.06,0.22,0.3,BINDERS[0],-0.08,0,0); P(d3,0.06,0.22,0.3,BINDERS[2],0,0,0);
       const lg=G(root,0,0,0,{anim:anim('glow',1,'Подсветка',true)}); lg.anim.rate=1.6; root.lampSw=lg; const led=mat([0.85,0.82,0.75],0.3,{glow:[1,0.9,0.72],glowFull:true,noTex:true});
       P(lg,W-0.02,0.006,0.012,led,0,H-0.04,F+0.05); P(lg,W-0.02,0.006,0.012,led,0,0.012,F+0.035);
       const lc=mkCanvas(1024,256),x=lc.getContext('2d'); x.fillStyle='#0f1012'; x.fillRect(0,0,1024,256); x.fillStyle='#e9a300'; x.beginPath(); x.moveTo(70,60); x.lineTo(190,60); x.lineTo(70,196); x.closePath(); x.fill(); x.fillStyle='#ffffff'; x.beginPath(); x.moveTo(190,60); x.lineTo(190,196); x.lineTo(70,196); x.closePath(); x.fill();
@@ -1468,6 +1422,82 @@ const CATALOG={
       RB(root,0.98,0.26,0.03,0.01,back,0,0.66,F+0.05); const logo=lg.add(new Node({mesh:QUAD(0.94,0.235),mat:mat([0.75,0.75,0.75],0.4,{tex:lk,glow:[1.1,1.1,1.1]}),pos:[0,0.66,F+0.0655]})); logo.trig=lg;
       const bt=C(root,0.012,0.01,mat(hex('#2a2b2e'),0.5,{glow:[1,0.75,0.35],noTex:true}),-W/2+0.2,0.76,-D/2+0.13,{seg:16}); bt.trig=lg; },
     lights:it=>{ const n=it.root.lampSw; return n?[{p:M4.pt(itemWorld(it),0,0.5,0.75),c:[1,0.9,0.75],pow:0.7,k:1.6,down:false,sh:false,on:ease(n.anim.t)}]:[]; } },
+  pka6:{name:'Пароконвектомат ПКА 6-1/3П',cat:'catering',small:true,purpose:'Бойлерный мини-пароконвектомат на 6 уровней GN 1/3: пар и горячий воздух по отдельности или вместе. Нажмите на ручку — откроется дверца со стеклом. Круглая кнопка справа на панели включает аппарат: загораются табло, свет в камере, крутится вентилятор и из трубы идёт пар. Гастроёмкости внутри выдвигаются.',
+    specs:[['Габариты','520×540 (593 с ручкой) × 690 мм'],['Уровней','6 × GN 1/3, шаг 60 мм'],['Температура','до 270 °C'],['Парообразование','бойлерное'],['Мощность','3,2 кВт, 230 В'],['Масса','45 кг']],materials:'Корпус и камера — нержавеющая сталь AISI 304, дверца — закалённое двойное стекло в чёрной стеклянной рамке, панель — стекло',
+    variants:[{name:'Нержавейка'}],
+    build(root,v){ const W=0.52,D=0.54,H=0.69,st=mat(hex('#cdd0d4'),0.9,{tex:'brushed',texMode:4,texScale:3.2}),stI=mat(hex('#dfe2e5'),1,{tex:'brushed',texMode:4,texScale:5}),blk=mat(hex('#0d0e10'),1,{noTex:true}),chrome=mat(hex('#e8ebee'),1,{noTex:true}),dk=mat(hex('#1d1e21'),0.5,{noTex:true}),F=D/2;
+      for(const sx of [-1,1]) for(const sz of [-1,1]){ C(root,0.016,0.018,dk,sx*(W/2-0.04),0.009,sz*(D/2-0.05),{seg:14}); }
+      // корпус из листов: бока, верх, низ, зад, рамка проёма камеры
+      const y0=0.018,y1=H; P(root,0.012,y1-y0,D,st,-W/2+0.006,(y0+y1)/2,0); P(root,0.012,y1-y0,D,st,W/2-0.006,(y0+y1)/2,0); P(root,W,0.012,D,st,0,y1-0.006,0); P(root,W,0.03,D,st,0,y0+0.015,0); P(root,W,y1-y0,0.012,st,0,(y0+y1)/2,-D/2+0.006);
+      for(let i=0;i<9;i++) P(root,0.002,0.006,0.16,dk,-W/2-0.0005,0.42+i*0.016,-0.12);
+      const cx=-0.03,cw=0.37,ch=0.38,cy=0.1+ch/2,cd=0.4,cz=F-0.03-cd/2; // камера
+      P(root,cw,0.004,cd,stI,cx,cy-ch/2,cz); P(root,cw,0.004,cd,stI,cx,cy+ch/2,cz); P(root,0.004,ch,cd,stI,cx-cw/2,cy,cz); P(root,0.004,ch,cd,stI,cx+cw/2,cy,cz); P(root,cw,ch,0.004,stI,cx,cy,cz-cd/2);
+      P(root,W-0.024,0.052,0.03,st,0,0.074,F-0.015); P(root,W-0.024,0.58-(cy+ch/2),0.03,st,0,(0.58+cy+ch/2)/2,F-0.015);
+      P(root,(cx-cw/2)-(-W/2+0.012),ch,0.03,st,(-W/2+0.012+cx-cw/2)/2,cy,F-0.015); P(root,(W/2-0.012)-(cx+cw/2),ch,0.03,st,(W/2-0.012+cx+cw/2)/2,cy,F-0.015);
+      // направляющие на 6 уровней
+      for(const sx of [-1,1]){ const xx=cx+sx*(cw/2-0.02); for(const zz of [cz-cd/2+0.05,cz+cd/2-0.05]) TB(root,[[xx,cy-ch/2+0.02,zz],[xx,cy+ch/2-0.03,zz]],0.003,chrome,{seg:6});
+        for(let k=0;k<6;k++){ const yy=cy-ch/2+0.045+k*0.058; TB(root,[[xx,yy,cz-cd/2+0.05],[xx+sx*0.004,yy-0.004,cz-cd/2+0.03],[xx+sx*0.004,yy-0.004,cz+cd/2-0.03],[xx,yy,cz+cd/2-0.05]],0.0022,chrome,{seg:5}); } }
+      // вентилятор с кольцевым ТЭНом и решёткой
+      const fz=cz-cd/2+0.014; const ring=r=>{ const p=[]; for(let i=0;i<=36;i++){ const a=i/36*Math.PI*2; p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r,fz]); } return p; };
+      TB(root,ring(0.125),0.006,mat(hex('#5b5f66'),0.6,{noTex:true}),{seg:8}); TB(root,ring(0.112),0.006,mat(hex('#5b5f66'),0.6,{noTex:true}),{seg:8});
+      const on=G(root,0,0,0,{anim:anim('glow',1,'Работа')}); on.anim.rate=1.2; root.ovenOn=on;
+      const fan=G(root,cx,cy,fz+0.008,{anim:anim('spin',9,'Вентилятор')}); fan.anim.axis='z'; fan.anim.rate=0.8; C(fan,0.022,0.012,chrome,0,0,0,{rotX:Math.PI/2,seg:18});
+      for(let k=0;k<8;k++){ const a=k/8*Math.PI*2,g=G(fan,0,0,0,{rotZ:a}); P(g,0.012,0.08,0.016,stI,0.02,0.055,0,{rotY:0.5}); } on.anim.link=[fan];
+      for(const r of [0.06,0.1,0.14]) TB(root,ring(r).map(p=>[p[0],p[1],fz+0.03]),0.0016,chrome,{seg:5}); for(let k=0;k<12;k++){ const a=k/12*Math.PI*2; TB(root,[[cx+Math.cos(a)*0.03,cy+Math.sin(a)*0.03,fz+0.03],[cx+Math.cos(a)*0.145,cy+Math.sin(a)*0.145,fz+0.03]],0.0016,chrome,{seg:5}); }
+      // подсветка камеры
+      C(on,0.02,0.006,mat([0.7,0.68,0.6],0.5,{glow:[1,0.92,0.7],glowFull:true,noTex:true}),cx+cw/2-0.002,cy+ch/2-0.06,cz+0.08,{rotZ:Math.PI/2,seg:18});
+      // гастроёмкости GN 1/3 с выпечкой
+      const gm=mat(hex('#d9dce0'),1,{tex:'brushed',texMode:4,texScale:8}),bun=mat(hex('#c98a3e'),0.35,{noTex:true}),bunT=mat(hex('#a7652a'),0.45,{noTex:true});
+      [1,3].forEach((lv,i)=>{ const yy=cy-ch/2+0.045+lv*0.058+0.003,tr=G(root,cx,yy,cz+0.01,{anim:anim('slideZ',0.26,'Гастроёмкость')}); tr.anim.rate=1.8;
+        P(tr,0.325,0.003,0.176,gm,0,0,0); for(const sz of [-1,1]) P(tr,0.325,0.022,0.003,gm,0,0.011,sz*0.088); for(const sx of [-1,1]) P(tr,0.003,0.022,0.176,gm,sx*0.1625,0.011,0); for(const sx of [-1,1]) P(tr,0.008,0.004,0.19,gm,sx*0.17,0.022,0);
+        for(let k=0;k<6;k++){ const bx=-0.11+(k%3)*0.11,bz=-0.042+Math.floor(k/3)*0.084; if(i===0){ SPHn(tr,1,bun,bx,0.016,bz,{scl:[0.042,0.018,0.034]}); SPHn(tr,1,bunT,bx,0.022,bz,{scl:[0.034,0.014,0.027]}); } else { const g=G(tr,bx,0.012,bz,{rotY:k*0.7}); SPHn(g,1,bun,0,0,0,{scl:[0.048,0.014,0.022]}); for(const q of [-0.03,0,0.03]) SPHn(g,1,bunT,q,0.006,0,{scl:[0.014,0.01,0.02]}); } } });
+      // панель управления: чёрное стекло, табло, кнопки
+      const pc=mkCanvas(1024,224),x=pc.getContext('2d'),gg=x.createLinearGradient(0,0,0,224); gg.addColorStop(0,'#1a1b1e'); gg.addColorStop(0.5,'#0a0b0c'); gg.addColorStop(1,'#141517'); x.fillStyle=gg; x.fillRect(0,0,1024,224);
+      x.fillStyle='#cfd2d6'; x.font='600 17px Arial'; x.textAlign='center'; x.fillText('ТЕМПЕРАТУРА',370,46); x.fillText('ЩУП',530,46); x.fillText('ВРЕМЯ',690,46); x.fillText('1  2  3  4',850,46);
+      for(const X of [370,530,690]){ x.fillStyle='#050505'; rrect(x,X-62,58,124,56,6); x.fill(); x.fillStyle='rgba(120,20,20,.55)'; x.font='700 44px "Courier New",monospace'; x.fillText('888',X,102); }
+      const ic=[[70,'☁'],[130,'♨'],[190,'≋'],[250,'✱'],[310,'↻']]; ic.forEach(([X,t])=>{ x.strokeStyle='#8e9196'; x.lineWidth=2; rrect(x,X-22,128,44,40,6); x.stroke(); x.fillStyle='#d9dbde'; x.font='22px Arial'; x.fillText(t,X,156); });
+      for(const X of [330,410,490,570,650,730]){ x.strokeStyle='#8e9196'; x.beginPath(); x.moveTo(X-10,156); x.lineTo(X,144); x.lineTo(X+10,156); x.stroke(); }
+      for(let i=0;i<4;i++){ x.fillStyle='#1f8b3c'; x.beginPath(); x.arc(818+i*22,72,5,0,7); x.fill(); } x.strokeStyle='#8e9196'; rrect(x,810,128,80,40,6); x.stroke(); x.fillStyle='#d9dbde'; x.font='600 18px Arial'; x.fillText('ПУСК/СТОП',850,154);
+      x.fillStyle='#e8eaec'; x.font='italic 700 26px Georgia,serif'; x.fillText('Abat',90,70); const pk='pkaPanel'; if(!TEX[pk]) TEX[pk]=texFromCanvas(pc);
+      const PH=0.1,PY=0.63; P(root,W-0.004,PH+0.008,0.014,blk,0,PY,F-0.004); root.add(new Node({mesh:QUAD(W-0.012,PH),mat:mat([1,1,1],1,{tex:pk}),pos:[0,PY,F+0.0032]}));
+      const dc=mkCanvas(512,96),y=dc.getContext('2d'); y.fillStyle='#000'; y.fillRect(0,0,512,96); y.fillStyle='#ff2a1a'; y.font='700 70px "Courier New",monospace'; y.textAlign='center'; y.fillText('180',86,74); y.fillText('---',256,74); y.fillText('0:25',428,74); const dk2='pkaDisp'; if(!TEX[dk2]) TEX[dk2]=texFromCanvas(dc);
+      const px=X=>-(W-0.012)/2+X/1024*(W-0.012),py=Y=>PY+PH/2-Y/224*PH; [[370,0],[530,1],[690,2]].forEach(([X,i])=>{ const q=on.add(new Node({mesh:QUAD(0.059,0.024),mat:mat([0.25,0.05,0.04],0.3,{tex:dk2,glow:[1.3,1.3,1.3],glowFull:true}),pos:[px(X),py(86),F+0.0036]})); q.mesh=makeMesh({pos:[-0.0295,-0.012,0,0.0295,-0.012,0,0.0295,0.012,0,-0.0295,0.012,0],nrm:[0,0,1,0,0,1,0,0,1,0,0,1],uv:[i/3,1,(i+1)/3,1,(i+1)/3,0,i/3,0],idx:[0,1,2,0,2,3]}); });
+      const pw=C(root,0.014,0.008,mat(hex('#202226'),0.6,{noTex:true}),W/2-0.035,PY+0.012,F+0.006,{rotX:Math.PI/2,seg:22}); pw.trig=on; C(on,0.016,0.002,mat([0.1,0.3,0.6],0.4,{glow:[0.3,0.7,1],glowFull:true,noTex:true}),W/2-0.035,PY+0.012,F+0.0105,{rotX:Math.PI/2,seg:22});
+      const sb=P(root,0.04,0.02,0.004,mat(hex('#1a1b1e'),0.5,{noTex:true}),px(850),py(148),F+0.0045); sb.trig=on;
+      // полоса с прорезями под панелью
+      P(root,W-0.02,0.02,0.006,st,0,0.568,F-0.002); for(let i=0;i<14;i++) P(root,0.016,0.004,0.002,dk,-0.2+i*0.031,0.568,F+0.0015);
+      // труба пароотвода и пар
+      C(root,0.02,0.045,st,W/2-0.08,H+0.022,-D/2+0.08,{seg:18}); const stm=G(root,W/2-0.08,H+0.045,-D/2+0.08,{anim:anim('sway',0.25,'Пар')}); stm.anim.speed=2.5; const sm=mat([0.95,0.96,0.97],0.2,{alpha:0.22,noTex:true});
+      const puff=G(stm,0,0,0,{anim:anim('scaleY',1,'Клубы пара')}); for(let k=0;k<5;k++) SPHn(puff,1,sm,Math.sin(k*1.7)*0.012,0.03+k*0.035,Math.cos(k*1.3)*0.01,{scl:[0.022+k*0.007,0.02+k*0.006,0.022+k*0.007]}); on.anim.link=[fan,stm,puff];
+      // дверца: чёрное стекло, окно, винты, логотип, ручка слева
+      const dW=W-0.012,dH=0.51,dz=F+0.002,door=G(root,W/2-0.006,0.045,dz,{anim:anim('rotY',1.95,'Дверца')}); door.anim.rate=1.4; const ox=-dW/2,gl=mat(hex('#0b0c0e'),1,{noTex:true});
+      const wx0=-0.335,wx1=-0.085,wy0=0.075,wy1=0.42,dcx=cx-(W/2-0.006),dcy=cy-0.045; P(door,dW,wy0,0.03,gl,ox,wy0/2,0.015); P(door,dW,dH-wy1,0.03,gl,ox,(dH+wy1)/2,0.015);
+      P(door,(wx0)-(-dW),wy1-wy0,0.03,gl,(wx0-dW)/2,(wy0+wy1)/2,0.015); P(door,0-wx1,wy1-wy0,0.03,gl,wx1/2,(wy0+wy1)/2,0.015);
+      P(door,wx1-wx0,wy1-wy0,0.004,mat([0.18,0.2,0.22],1,{alpha:0.35,noTex:true}),(wx0+wx1)/2,(wy0+wy1)/2,0.028); P(door,wx1-wx0+0.03,wy1-wy0+0.03,0.004,mat([0.6,0.62,0.64],1,{alpha:0.18,noTex:true}),(wx0+wx1)/2,(wy0+wy1)/2,-0.004);
+      for(const xx of [wx0-0.03,wx1+0.03]) for(const yy of [wy0-0.02,wy1+0.02]) C(door,0.007,0.004,chrome,xx,yy,0.031,{rotX:Math.PI/2,seg:14});
+      const lc=mkCanvas(256,64),z=lc.getContext('2d'); z.fillStyle='#0b0c0e'; z.fillRect(0,0,256,64); z.fillStyle='#e8eaec'; z.font='italic 700 34px Georgia,serif'; z.textAlign='center'; z.fillText('Abat',128,44); const lk='abatLogo'; if(!TEX[lk]) TEX[lk]=texFromCanvas(lc);
+      door.add(new Node({mesh:QUAD(0.09,0.0225),mat:mat([1,1,1],0.8,{tex:lk}),pos:[ox,0.035,0.0305]}));
+      // внутренняя сторона: нержавейка и белый уплотнитель
+      const sl=mat(hex('#eceae6'),0.2,{noTex:true}); P(door,cw+0.02,0.012,0.012,sl,dcx,dcy+ch/2+0.006,-0.008); P(door,cw+0.02,0.012,0.012,sl,dcx,dcy-ch/2-0.006,-0.008); P(door,0.012,ch+0.02,0.012,sl,dcx-cw/2-0.006,dcy,-0.008); P(door,0.012,ch+0.02,0.012,sl,dcx+cw/2+0.006,dcy,-0.008);
+      const hm=mat(hex('#e9eaec'),0.8,{noTex:true}); P(door,0.022,0.05,0.02,hm,ox-dW/2+0.03,0.31,0.04); P(door,0.022,0.04,0.02,hm,ox-dW/2+0.03,0.18,0.04); TB(door,[[ox-dW/2+0.03,0.33,0.05],[ox-dW/2+0.03,0.315,0.068],[ox-dW/2+0.034,0.25,0.072],[ox-dW/2+0.03,0.17,0.066],[ox-dW/2+0.03,0.16,0.05]],0.012,hm,{seg:12}); },
+    lights:it=>{ const n=it.root.ovenOn; return n?[{p:M4.pt(itemWorld(it),-0.03,0.25,0.4),c:[1,0.86,0.6],pow:0.45,k:5,down:false,sh:false,on:ease(n.anim.t)}]:[]; } },
+  pk6:{name:'Подставка ПК-6-6/4',cat:'catering',purpose:'Подставка под пароконвектомат или конвекционную печь с направляющими на 6 противней 600×400. Нажмите на противень — он выдвинется. На столешницу можно поставить пароконвектомат.',
+    specs:[['Габариты','840×700×770 (800) мм'],['Противни','6 × 600×400 мм'],['Масса','26 кг'],['Опоры','регулируемые, +30 мм']],materials:'Нержавеющая сталь AISI 430, профильная труба 40×40 мм',
+    variants:[{name:'Нержавейка'}],
+    build(root,v){ const W=0.84,D=0.7,H=0.77,st=mat(hex('#cdd0d4'),0.9,{tex:'brushed',texMode:4,texScale:3}),tb=mat(hex('#c3c7cb'),0.85,{tex:'brushed',texMode:4,texScale:6}),dk=mat(hex('#2a2b2e'),0.5,{noTex:true}),T=0.04,fh=0.035;
+      // столешница с загибом
+      P(root,W,0.0025,D,st,0,H-0.00125,0); for(const sz of [-1,1]) P(root,W,0.035,0.0025,st,0,H-0.0175,sz*(D/2-0.00125)); for(const sx of [-1,1]) P(root,0.0025,0.035,D,st,sx*(W/2-0.00125),H-0.0175,0);
+      for(const sx of [-1,1]) for(const sz of [-1,1]) C(root,0.004,0.002,dk,sx*(W/2-0.025),H+0.001,sz*(D/2-0.025),{seg:10});
+      // ножки и регулируемые опоры
+      const lx=W/2-T/2-0.004,lz=D/2-T/2-0.004; for(const sx of [-1,1]) for(const sz of [-1,1]){ P(root,T,H-0.035-fh,T,tb,sx*lx,fh+(H-0.035-fh)/2,sz*lz); P(root,T-0.004,0.003,T-0.004,dk,sx*lx,fh+0.0015,sz*lz); C(root,0.008,0.02,mat(hex('#b9bcc0'),0.9,{noTex:true}),sx*lx,fh-0.01,sz*lz,{seg:6}); C(root,0.02,0.012,dk,sx*lx,0.006,sz*lz,{seg:18}); }
+      // нижняя рама и обвязка под столешницей
+      const r=0.03,yl=0.12; for(const sx of [-1,1]) P(root,r,r,D-2*T,tb,sx*lx,yl,0); P(root,W-2*T,r,r,tb,0,yl,-lz); P(root,W-2*T,r,r,tb,0,H-0.05,-lz); for(const sx of [-1,1]) P(root,r,r,D-2*T,tb,sx*lx,H-0.05,0);
+      // секция с направляющими справа
+      const rx0=W/2-T-0.4-0.012,ix=rx0-0.015; for(const sz of [-1,1]) P(root,r,H-0.05-yl,r,tb,ix,(H-0.05+yl)/2,sz*lz); P(root,r,r,D-2*T,tb,ix,yl,0); P(root,r,r,D-2*T,tb,ix,H-0.05,0);
+      const levels=[0.19,0.27,0.35,0.43,0.51,0.59]; for(const y of levels){ for(const [xx,s] of [[ix+r/2,1],[lx-T/2,-1]]){ P(root,0.022,0.0025,D-2*T+0.03,tb,xx+s*0.011,y,0); P(root,0.0025,0.02,D-2*T+0.03,tb,xx+s*0.0012,y+0.009,0); } }
+      const tm=mat(hex('#b3b7bc'),0.95,{tex:'brushed',texMode:4,texScale:7}),bun=mat(hex('#c98a3e'),0.35,{noTex:true}),bunT=mat(hex('#a7652a'),0.45,{noTex:true}),cx=(ix+r/2+lx-T/2)/2;
+      levels.forEach((y,i)=>{ const tr=G(root,cx,y+0.003,0,{anim:anim('slideZ',0.42,'Противень '+(i+1))}); tr.anim.rate=1.8; P(tr,0.4,0.0015,0.6,tm,0,0,0); for(const sz of [-1,1]) P(tr,0.4,0.012,0.0015,tm,0,0.006,sz*0.3); for(const sx of [-1,1]) P(tr,0.0015,0.012,0.6,tm,sx*0.2,0.006,0);
+        if(i===1||i===4){ for(let k=0;k<12;k++){ const bx=-0.135+(k%3)*0.135,bz=-0.23+Math.floor(k/3)*0.153; SPHn(tr,1,bun,bx,0.016,bz,{scl:[0.045,0.02,0.045]}); SPHn(tr,1,bunT,bx,0.023,bz,{scl:[0.036,0.014,0.036]}); } } }); } },
   laptop:{name:'Ноутбук',cat:'office',small:true,purpose:'Рабочий ноутбук для офиса и переговорных. Нажмите на крышку — закроется или откроется.',
     specs:[['Экран','15,6″, IPS'],['Вес','1,7 кг'],['Автономность','до 10 ч']],materials:'Корпус — алюминий',
     variants:[{name:'Серебристый',c:'#c3c7cc'},{name:'Графит',c:'#3a3d42'}],
@@ -1550,8 +1580,8 @@ const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'laminate',wall:'p
     {type:'roundtable',x:16.0,z:8.0},{type:'loftstul',x:16.0,z:9.3,rot:180,variant:2},{type:'loftstul',x:17.13,z:7.35,rot:300,variant:2},{type:'loftstul',x:14.87,z:7.35,rot:60,variant:2},
     {type:'extinguisher',x:0.3,z:8.8},{type:'extinguisher',x:19.7,z:11.6},
     // ресепшн у входа, декор, техника
-    {type:'reception',x:9.0,z:10.2},{type:'monstera',x:6.85,z:11.05},{type:'torsher',x:5.15,z:11.5,variant:0},{type:'candle',x:3.4,z:9.7,y:-1,variant:1},{type:'vase',x:3.85,z:9.95,y:-1,variant:0},
-    {type:'coffee',x:16.6,z:11.65,rot:180,y:-1,variant:0},{type:'cooler',x:18.6,z:11.65,rot:180},{type:'mfu',x:6.5,z:1.0,y:-1},{type:'organizer',x:4.9,z:2.75,y:-1},{type:'book',x:15.0,z:2.8,y:-1,variant:2},{type:'monstera',x:19.2,z:5.9},
+    {type:'reception',x:9.0,z:10.2},{type:'monstera',x:6.85,z:11.05},{type:'book',x:3.6,z:9.8,y:-1,variant:3},
+    {type:'coffee',x:16.6,z:11.65,rot:180,y:-1,variant:0},{type:'cooler',x:18.6,z:11.65,rot:180},{type:'mfu',x:6.5,z:1.0,y:-1},{type:'book',x:15.0,z:2.8,y:-1,variant:2},{type:'monstera',x:19.2,z:5.9},
     // вторая рабочая группа и презентация
     {type:'loftdesk1',x:15.6,z:2.8},{type:'loftchair',x:14.9,z:2.0,variant:2},{type:'loftchair',x:16.3,z:2.0,variant:2},{type:'loftchair',x:14.9,z:3.6,rot:180,variant:2},{type:'loftchair',x:16.3,z:3.6,rot:180,variant:2},
     {type:'laptop',x:14.9,z:2.55,y:-1},{type:'laptop',x:16.3,z:2.55,y:-1},{type:'laptop',x:14.9,z:3.05,rot:180,y:-1},{type:'laptop',x:16.3,z:3.05,rot:180,y:-1},
@@ -1560,7 +1590,7 @@ const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'laminate',wall:'p
     {type:'loftdesk2',x:12.0,z:-2.3},{type:'loftchair',x:11.4,z:-3.3,variant:4},{type:'loftchair',x:12.6,z:-3.3,variant:4},{type:'loftchair',x:11.4,z:-1.3,rot:180,variant:4},{type:'loftchair',x:12.6,z:-1.3,rot:180,variant:4},
     {type:'laptop',x:11.4,z:-2.6,y:-1},{type:'laptop',x:12.6,z:-2.0,rot:180,y:-1},{type:'mobboard',x:9.6,z:-2.3,rot:90},{type:'sansev',x:14.6,z:-4.1},{type:'books',x:12.9,z:-2.6,y:-1},
     // пекарня (восточный отсек)
-    {type:'oven4',x:25.4,z:7.6,rot:270},{type:'oven2',x:25.4,z:10.2,rot:270},{type:'saladette',x:22.3,z:6.9},{type:'sinktable',x:22.4,z:11.55,rot:180},{type:'extinguisher',x:20.3,z:6.8},{type:'prodtable',x:23.0,z:9.2},{type:'mixer',x:22.6,z:9.2,y:-1},{type:'doughmix',x:21.2,z:9.6,rot:90},
+    {type:'oven4',x:25.4,z:7.6,rot:270},{type:'oven2',x:25.4,z:10.2,rot:270},{type:'saladette',x:22.3,z:6.9},{type:'sinktable',x:22.4,z:11.55,rot:180},{type:'extinguisher',x:20.3,z:6.8},{type:'prodtable',x:23.0,z:9.2},{type:'pk6',x:23.6,z:6.95},{type:'pka6',x:23.6,z:6.95,y:-1},{type:'doughmix',x:21.2,z:9.6,rot:90},
     // мастерская (западный отсек)
     {type:'workbench',x:-4.0,z:3.5,rot:90},{type:'telega',x:-3.4,z:1.5},{type:'toolcab',x:-1.6,z:1.4,variant:1},{type:'shelving',x:-2.6,z:5.6,rot:180},
     // свет
@@ -1578,7 +1608,7 @@ const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'laminate',wall:'p
     {type:'standdesk',x:13.2,z:1.2},{type:'laptop',x:13.2,z:1.0,y:-1},{type:'desklamp',x:13.7,z:1.0,y:-1,variant:1},{type:'loftchair',x:13.2,z:2.1,rot:180,variant:11},
     {type:'mobboard',x:7.0,z:5.4,rot:90},{type:'chester',x:2.2,z:7.2,rot:90},{type:'loftdesk3',x:3.6,z:7.2},{type:'loftpouf',x:5.0,z:7.2,variant:8},{type:'flower',x:0.45,z:9.0},
     // лаунж
-    {type:'sofa',x:5.0,z:11.3,rot:180},{type:'loftdesk3',x:5.0,z:9.9},{type:'book',x:5.2,z:9.9,y:-1,variant:0},{type:'candle',x:4.7,z:10.05,y:-1},{type:'torsher',x:7.2,z:11.4,variant:1},{type:'monstera',x:0.95,z:11.0,variant:1},{type:'loftpouf',x:3.4,z:9.8,variant:6},{type:'loftpouf',x:6.6,z:9.8,variant:2},{type:'flower',x:8.8,z:11.5},
+    {type:'sofa',x:5.0,z:11.3,rot:180},{type:'loftdesk3',x:5.0,z:9.9},{type:'book',x:5.2,z:9.9,y:-1,variant:0},{type:'monstera',x:0.95,z:11.0,variant:1},{type:'loftpouf',x:3.4,z:9.8,variant:6},{type:'loftpouf',x:6.6,z:9.8,variant:2},{type:'flower',x:8.8,z:11.5},
     {type:'roundtable',x:12.5,z:9.0},{type:'loftstul',x:12.5,z:10.3,rot:180,variant:1},{type:'loftstul',x:13.63,z:8.35,rot:300,variant:1},{type:'loftstul',x:11.37,z:8.35,rot:60,variant:1},
     {type:'extinguisher',x:19.7,z:11.6},
     {type:'lamp_round',x:17.0,z:2.4},{type:'lamp_square',x:10.0,z:5.4},{type:'lamp_round',x:12.0,z:2.0},{type:'lamp_square',x:3.6,z:7.2},{type:'lamp_round',x:5.0,z:10.2},{type:'lamp_round',x:12.5,z:9.0},{type:'lamp_square',x:8.5,z:7.5}]}]};
@@ -2141,7 +2171,7 @@ function pick(o,d,opts={},list=drawList){
     const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d); let t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx);
     if(t===null) continue; if(e.mesh.precise){ t=rayMesh(lo,ld,e.mesh.g); if(t===null) continue; }
     // луч начинается внутри коробки стены/кабины/конструкции — её не считаем (иначе изнутри лифта не нажать кнопку)
-    if(!e.item&&!n.isFloor&&!n.panel&&!n.liftBtn){ const mn=e.mesh.mn,mx=e.mesh.mx; if(lo[0]>mn[0]&&lo[0]<mx[0]&&lo[1]>mn[1]&&lo[1]<mx[1]&&lo[2]>mn[2]&&lo[2]<mx[2]) continue; } if(n.handle||n.wbTool||n.wbBoard&&!xr.grab.size){ if(!hbest||t<hbest.t+(n.wbTool?0.05:0)) hbest={t,e,lo,ld}; } else if(!best||t<best.t) best={t,e,lo,ld}; }
+    if(!e.item&&!n.isFloor&&!n.panel&&!n.liftBtn){ const mn=e.mesh.mn,mx=e.mesh.mx; if(lo[0]>mn[0]&&lo[0]<mx[0]&&lo[1]>mn[1]&&lo[1]<mx[1]&&lo[2]>mn[2]&&lo[2]<mx[2]) continue; } if(n.handle||n.tapHit||n.wbTool||n.wbBoard&&!xr.grab.size){ if(!hbest||t<hbest.t+(n.wbTool?0.05:0)) hbest={t,e,lo,ld}; } else if(!best||t<best.t) best={t,e,lo,ld}; }
   if(hbest) best=hbest; if(!best) return null;
   if(!hbest&&best.e.item){ const inA=n=>{ if(n._ia===undefined){ let a=n,r=false; while(a&&!a.item){ if(a.trig||(a.anim&&a.anim.type!=='glow')){ r=true; break; } a=a.parent; } n._ia=r; } return n._ia; }; if(!inA(best.e.node)){ let ib=null; for(const e of list){ if(e.item!==best.e.item||!e.mesh||!inA(e.node)) continue; const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d),t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx); if(t!==null&&t<best.t+0.04&&(!ib||t<ib.t)) ib={t,e,lo,ld}; } if(ib) best=ib; } }
   const p=[o[0]+d[0]*best.t,o[1]+d[1]*best.t,o[2]+d[2]*best.t],n=best.e.node;
@@ -2356,11 +2386,11 @@ const CGROUPS=[
   {k:'seats',n:'Кресла и стулья',ic:'<path d="M7 4h10v7H7zM5 11h14v3H5zM8 14l-1 6M16 14l1 6"/>',t:['loftchair','gamechair','loftstul']},
   {k:'soft',n:'Диваны и пуфы',ic:'<path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M2 11h20v6H2zM4 17v2M20 17v2"/>',t:['sofa','chester','loftpouf']},
   {k:'store',n:'Хранение',ic:'<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M5 9h14M5 15h14M11 6h2M11 12h2M11 18h2"/>',t:['cabinet','wardrobe1','wardrobe2','garderob','pedestal','drawers','shelving','toolcab']},
-  {k:'kitchen',n:'Кухня и холод',ic:'<rect x="6" y="2" width="12" height="20" rx="1.5"/><path d="M6 10h12M9 5v3M9 13v4"/>',t:['saladette','minifridge','cakecase','sinktable','microwave','coffee','cooler']},
-  {k:'prod',n:'Производство',ic:'<path d="M3 21V10l5 3V10l5 3V10l5 3V5h3v16z"/>',t:['oven4','oven2','mixer','doughmix','workbench','telega']},
-  {k:'light',n:'Свет',ic:'<path d="M12 3v4M6 11a6 6 0 0 1 12 0zM9 15l-1 2M15 15l1 2M12 15v3"/>',t:['lamp_round','lamp_square','desklamp','torsher']},
-  {k:'equip',n:'Оснащение',ic:'<rect x="3" y="4" width="18" height="11" rx="1"/><path d="M8 15l-2 6M16 15l2 6M12 15v6"/>',t:['laptop','mfu','organizer','books','whiteboard','mobboard','reception','extinguisher']},
-  {k:'decor',n:'Растения и декор',ic:'<path d="M12 21v-8M12 13c-4 0-6-3-6-7 4 0 6 3 6 7zM12 11c0-4 2-7 6-7 0 4-2 7-6 7zM8 21h8"/>',t:['monstera','sansev','flower','vase','candle','book']}];
+  {k:'kitchen',n:'Кухня и холод',ic:'<rect x="6" y="2" width="12" height="20" rx="1.5"/><path d="M6 10h12M9 5v3M9 13v4"/>',t:['pka6','pk6','saladette','minifridge','cakecase','sinktable','microwave','coffee','cooler']},
+  {k:'prod',n:'Производство',ic:'<path d="M3 21V10l5 3V10l5 3V10l5 3V5h3v16z"/>',t:['oven4','oven2','doughmix','workbench','telega']},
+  {k:'light',n:'Свет',ic:'<path d="M12 3v4M6 11a6 6 0 0 1 12 0zM9 15l-1 2M15 15l1 2M12 15v3"/>',t:['lamp_round','lamp_square','desklamp']},
+  {k:'equip',n:'Оснащение',ic:'<rect x="3" y="4" width="18" height="11" rx="1"/><path d="M8 15l-2 6M16 15l2 6M12 15v6"/>',t:['laptop','mfu','books','whiteboard','mobboard','reception','extinguisher']},
+  {k:'decor',n:'Растения и декор',ic:'<path d="M12 21v-8M12 13c-4 0-6-3-6-7 4 0 6 3 6 7zM12 11c0-4 2-7 6-7 0 4-2 7-6 7zM8 21h8"/>',t:['monstera','sansev','flower','book']}];
 function groupOf(k){ for(const g of CGROUPS) if(g.t.includes(k)) return g.k; const d=CATALOG[k]; return d.cat==='light'?'light':d.seat?'seats':'equip'; }
 const plVar=n=>n+' '+plural(n,'вариант','варианта','вариантов');
 function buildCatalogUI(){
