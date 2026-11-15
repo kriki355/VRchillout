@@ -74,6 +74,38 @@ def ovgroups(names):
     return {('d'+str(i)):{'type':'rotX','amount':1.48,'hinge':h,'parts':[h],'label':'Дверца камеры'} for i,h in enumerate(names)}
 def ovbox(ps,gof,h):
     gof['_boxes']={g:list(map(lambda v:v.tolist(),bb(ps,[p['name'] for p in ps if hn in p['anc']]))) for g,hn in [(gg,hh) for gg,hh in h.items()]}
+
+def promfridge(ps,gof,h):
+    for side,names,(hx,hz),(fx,fz) in [('L',['door-left','door-left.001'],(-67.2,35.9),(-57.1,101.7)),('R',['door-right/dark','door-right/metal'],(67.1,35.7),(49.2,99.9))]:
+        dx,dz=fx-hx,fz-hz; th=math.atan2(-dz,dx) if side=='L' else math.atan2(dz,-dx); c,s=math.cos(th),math.sin(th)
+        for p in ps:
+            if p['name'] in names:
+                Q=p['P'].reshape(-1,3).copy(); X=Q[:,0]-hx; Z=Q[:,2]-hz; Q[:,0]=hx+X*c-Z*s; Q[:,2]=hz+X*s+Z*c; p['P']=Q.reshape(-1,3,3)
+                if 'dark' in p['mats'][0]: p['mats']=['doorpanel']
+    for p in ps:
+        if p['name']=='Unbranded cabinet details.002': p['mats']=['fridgedisplay']
+        elif 'metal' in p['mats'][0]: p['mats']=['stainless']
+        elif 'dark' in p['mats'][0]: p['mats']=['fridgedark']
+    info={}; hinge(ps,gof,info,'dl',['door-left','door-left.001'],'L',label='Левая дверца',amt=1.75); hinge(ps,gof,info,'dr',['door-right/dark','door-right/metal'],'R',label='Правая дверца',amt=1.75)
+    A=np.concatenate([p['P'].reshape(-1,3) for p in ps if 'door' in p['name']]); print('doors z',A[:,2].min(),A[:,2].max(),'x',A[:,0].min(),A[:,0].max())
+    gof['_boxes']={'disp':list(map(lambda v:v.tolist(),bb(ps,['Unbranded cabinet details.002'])))}
+    gof['_info']=info
+
+def mixer2(ps,gof,h):
+    info={}
+    for p in ps:
+        n=p['name']
+        if n=='whisk detail': gof[n]='wh'; p['mats']=['mixsteel']
+        elif n=='guard detail': gof[n]='gd'; p['mats']=['mixguard']
+        elif n=='static detail.003': p['mats']=['mixstart']
+        elif n=='static detail.004': p['mats']=['mixstop']
+        elif 'cream' in p['mats'][0]: p['mats']=['mixbody']
+        elif 'mid grey' in p['mats'][0]: p['mats']=['mixsteel']
+        elif 'elastomer' in p['mats'][0]: p['mats']=['mixdark']
+    lo,hi=bb(ps,['whisk detail']); info['wh']={'type':'spin','amount':7.0,'pivotRaw':[float((lo[0]+hi[0])/2),0.0,float((lo[2]+hi[2])/2)],'label':'Спираль'}
+    lo,hi=bb(ps,['guard detail']); info['gd']={'type':'rotX','amount':-1.15,'pivotRaw':[0.0,float(hi[1]),float(lo[2])],'label':'Защитная крышка'}
+    gof['_boxes']={k:list(map(lambda v:v.tolist(),bb(ps,[n]))) for k,n in [('whisk','whisk detail'),('start','static detail.003'),('stop','static detail.004'),('guard','guard detail'),('all','static detail.001')]}
+    gof['_info']=info
 CFG=[
  ('minifridge','minifridge.fbx',dict(height=0.86,rot=RM90,special=minifridge,drop=('arm',))),
  ('sinktable','newmoika1.fbx',dict(height=1.2,rot=R180)),
@@ -90,6 +122,8 @@ CFG=[
  ('prodtable','stolproizvod.fbx',dict(rot=R90,dims=[1.6,0.88,0.8])),
  ('drawers',None,None),
  ('telega','../new4/telega.fbx',dict(height=1.0,special=telega)),
+ ('mixer2','mixer2.fbx',dict(height=1.47,special=mixer2,target=16000)),
+ ('promfridge','promfridge.fbx',dict(height=2.05,special=promfridge,target=12000)),
 ]
 
 OUT=json.load(open('/home/claude/tools3/new4.json'))
