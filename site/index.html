@@ -55,7 +55,7 @@ h5.sub{margin:8px 0 6px;font-size:12px;font-weight:600;opacity:.7}
 .wl_plaster{background:#e4ded4}.wl_graphite{background:#61656c}.wl_sage{background:#a8b7a3}.wl_brick{background:#a5503a;background-image:linear-gradient(#ddd 2px,transparent 2px),linear-gradient(90deg,#ddd 2px,transparent 2px);background-size:13px 7px}.wl_concrete{background:radial-gradient(circle at 25% 25%,#666 1.5px,transparent 2px) #9c9d9a;background-size:13px 13px}.wl_wood{background:repeating-linear-gradient(90deg,#b98656 0 5px,#1a1410 5px 7px)}.wl_subway{background:#f2f2f0;background-image:linear-gradient(#bbb 1px,transparent 1px),linear-gradient(90deg,#bbb 1px,transparent 1px);background-size:9px 5px}
 .fl_tile{background:#a9a7a2}.fl_laminate{background:linear-gradient(90deg,#c49a6c 0 48%,#a97f55 48% 52%,#c8a072 52%)}.fl_parquet{background:repeating-linear-gradient(45deg,#a0703f 0 6px,#b98a58 6px 12px)}.fl_ceramic{background:#eeeeeb;background-image:linear-gradient(#bbb 1px,transparent 1px),linear-gradient(90deg,#bbb 1px,transparent 1px);background-size:13px 13px}.fl_lino{background:radial-gradient(circle at 30% 40%,#7c8892 1px,transparent 2px) #9aa5ad;background-size:5px 5px}.fl_carpet{background:repeating-linear-gradient(0deg,#4b5159 0 2px,#565d66 2px 4px)}.fl_epoxy{background:linear-gradient(135deg,#8e9a9e,#6f7b80)}
 #sbVar{height:32px;border-radius:8px;border:1px solid #c9ccc5;background:#fff;font:inherit;font-size:13px;padding:0 6px;max-width:170px}
-#favBtn b,#gfxBtn b,#sndBtn b,#qBtn b{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:5px;background:var(--paper-2);font-size:12px}
+#favBtn b,#gfxBtn b,#sndBtn b,#qBtn b,#dynBtn b,#fpsBtn b{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:5px;background:var(--paper-2);font-size:12px}
 /* подсказка и план */
 #hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);padding:8px 14px;font-size:13px;color:var(--ink-2);white-space:nowrap;pointer-events:none;display:flex;gap:16px;align-items:center}
 #hint span{white-space:nowrap}
@@ -174,6 +174,14 @@ input[type=file]{display:none}
 @media (max-width:900px){ #top .brand span{display:none} #zones{display:none} #editor{width:290px} }
 @media (prefers-reduced-motion:reduce){ #iBar,#iSpecs{transition:none} }
 /* ===== телефоны и планшеты ===== */
+#setWrap{position:relative;flex:none}
+#setBtn{display:flex;align-items:center;gap:6px}
+#setMenu{position:fixed;top:64px;display:none;flex-direction:column;gap:4px;padding:6px;min-width:190px;z-index:20}
+#setMenu.on{display:flex;animation:popIn .2s cubic-bezier(.2,.9,.25,1.2)}
+#setMenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}
+#fpsBox{position:fixed;right:14px;bottom:14px;padding:4px 9px;border-radius:8px;background:rgba(20,22,26,.72);color:#9ef09e;font:600 12px ui-monospace,monospace;z-index:9;pointer-events:none;display:none}
+@media (max-width:1240px){ #top .brand span,#setBtn span{display:none} }
+@media (max-width:1100px){ #specBtn,#favBtn{font-size:13px;padding-left:9px;padding-right:9px} }
 #touchUI,#sheetBtn{display:none} .tOnly{display:none} body.touch .tOnly{display:inline} body.touch .pcOnly{display:none}
 body.touch.walking #touchUI{display:block}
 #joy{position:fixed;left:22px;bottom:26px;width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.28);border:1.5px solid rgba(255,255,255,.7);box-shadow:0 6px 24px rgba(0,0,0,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none;z-index:6}
@@ -394,9 +402,14 @@ button.primary:hover:not(:disabled){box-shadow:0 6px 16px rgba(233,162,11,.35);t
   <div class="modes"><button id="mEdit" class="on">Редактор</button><button id="mWalk">Прогулка</button></div>
   <div id="zones" style="display:none"></div>
   <span class="grow"></span>
-  <button id="sndBtn" title="Звуки взаимодействия">Звук<b id="sndN">вкл</b></button>
-  <button id="qBtn" title="Качество картинки: разрешение рендера и сглаживание">Графика<b id="qN">выс</b></button>
-  <button id="gfxBtn" title="Качество теней: нажмите, чтобы переключить">Тени<b id="gfxN">выс</b></button>
+  <div id="setWrap"><button id="setBtn" title="Звук, графика, тени, производительность"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Настройки</span></button>
+   <div id="setMenu" class="panel">
+    <button id="sndBtn" title="Звуки взаимодействия">Звук<b id="sndN">вкл</b></button>
+    <button id="qBtn" title="Качество картинки: разрешение рендера и сглаживание">Графика<b id="qN">выс</b></button>
+    <button id="gfxBtn" title="Качество теней: нажмите, чтобы переключить">Тени<b id="gfxN">выс</b></button>
+    <button id="dynBtn" title="Снижать разрешение, когда кадров меньше 45 в секунду, и возвращать, когда снова плавно">Авто-FPS<b id="dynN">вкл</b></button>
+    <button id="fpsBtn" title="Счётчик кадров в углу экрана">Счётчик FPS<b id="fpsN">выкл</b></button>
+   </div></div>
   <button id="syncBtn" title="Отправить зал на сервер, чтобы открыть его в шлеме"><i></i><span>Отправить в VR</span></button>
   <button id="specBtn">Спецификация</button>
   <button id="favBtn">Избранное<b id="favN">0</b></button>
@@ -487,6 +500,7 @@ button.primary:hover:not(:disabled){box-shadow:0 6px 16px rgba(233,162,11,.35);t
 <div id="specP" class="panel"></div>
 <div id="mapWrap" class="panel" title="План зала: кликните, чтобы перейти"><canvas id="minimap" width="400" height="400"></canvas></div>
 <div id="hint" class="panel"></div>
+<div id="fpsBox"></div>
 <div id="touchUI"><div id="joy"><div id="joyK"></div></div><div id="tBtns"><button id="tTake">Взять</button><button id="tCrouch">Присесть</button></div></div>
 <button id="sheetBtn" class="panel">Каталог</button>
 <div id="lvBadge" class="panel"></div>
@@ -908,7 +922,7 @@ const GDESK_DATA={"top":{"lo":[-0.62795,0.72177,-0.41493],"hi":[0.62795,0.75,0.4
 let GDESK=null; const b64buf=s=>{ const bin=atob(s),u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u.buffer; };
 function gdeskMeshes(){ if(GDESK) return GDESK; GDESK={}; for(const [k,d] of Object.entries(GDESK_DATA)){ const Pq=new Int16Array(b64buf(d.p)),Nq=new Int8Array(b64buf(d.n)),I=new Uint16Array(b64buf(d.i)),pos=[],nrm=[],uv=[];
     for(let i=0;i<Pq.length;i++){ const a=i%3; pos.push(d.lo[a]+(Pq[i]+32767)/65534*(d.hi[a]-d.lo[a])); } for(let i=0;i<Nq.length;i++) nrm.push(Nq[i]/127); for(let i=0;i<Pq.length/3;i++) uv.push(0,0);
-    GDESK[k]=makeMesh({pos,nrm,uv,idx:Array.from(I)}); } return GDESK; }
+    GDESK[k]=makeMesh({pos,nrm,uv,idx:Array.from(I)}); GDESK[k].precise=true; } return GDESK; }
 const KELVIN={2700:[1,0.78,0.56],3000:[1,0.82,0.62],4000:[1,0.92,0.82],5000:[1,0.97,0.92],6500:[0.88,0.94,1]};
 const isCeil=it=>!!(it&&CATALOG[it.type]&&CATALOG[it.type].ceil);
 // руки VR (из присланного пакета): правая кисть с позами «открыта / кулак / указательный согнут», левая — зеркальная
@@ -1766,7 +1780,7 @@ function ensureShadow(list){ if(!shadowsAllowed()||SHD.frame===FRAME) return; SH
   const lights=gatherLights().filter(l=>l.tile>=0),cast=[]; let h=q*7+lights.length*131;
   for(const l of lights) h+=l.p[0]*3.1+l.p[1]*5.3+l.p[2]*7.7+l.tile;
   for(const e of list){ if(!e.item||e.bg||!e.mesh||e.node.noDraw||e.node.unlit||e.node.noDepth||e.node.noShadow||e.mat.alpha<1||e.item.ghost||isCeil(e.item)) continue; cast.push(e); const w=e.w; h+=(w[12]*1.3+w[13]*2.9+w[14]*4.1+w[0]+w[2]*1.7+w[5]*0.7)*((cast.length%97)+1); }
-  const sig=h.toFixed(4)+'|'+cast.length; if(sig===SHD.sig) return; SHD.sig=sig; SHD.n=(SHD.n||0)+1;
+  const sig=h.toFixed(4)+'|'+cast.length; if(sig===SHD.sig) return; const now=performance.now(); if(SHD.sig&&now-(SHD.t||0)<70&&!xr.session) return; SHD.t=now; SHD.sig=sig; SHD.n=(SHD.n||0)+1;
   const pf=gl.getParameter(gl.FRAMEBUFFER_BINDING),pv=gl.getParameter(gl.VIEWPORT),T=SHD.size/2;
   gl.bindFramebuffer(gl.FRAMEBUFFER,SHD.fbo); gl.viewport(0,0,SHD.size,SHD.size); gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND); gl.useProgram(PD.p); gl.uniform1f(PD.u.uFar,SHD.far);
   SHD.vps=[]; for(const l of lights){ const lp=l.p,vp=M4.mul(M4.persp(152*DEG,1,0.05,SHD.far),lookAtM(lp,[lp[0],lp[1]-1,lp[2]],[0,0,-1])); SHD.vps[l.tile]=vp;
@@ -1848,17 +1862,24 @@ function renderOutline(list,vp,w,h,fb=null,vx=0,vy=0){
 
 /* ============ Лучи и выбор ============ */
 function rayAabb(o,d,mn,mx){ let t0=-1e9,t1=1e9; for(let k=0;k<3;k++){ if(Math.abs(d[k])<1e-12){ if(o[k]<mn[k]-1e-6||o[k]>mx[k]+1e-6) return null; continue; } let a=(mn[k]-o[k])/d[k],b=(mx[k]-o[k])/d[k]; if(a>b){const t=a;a=b;b=t;} t0=Math.max(t0,a); t1=Math.min(t1,b); if(t0>t1) return null; } return t1<0?null:(t0>0?t0:0); }
+// точное попадание по треугольникам — для фигурных столешниц (вырез, скругления), где коробка врёт
+function rayMesh(o,d,g){ const P=g.pos,I=g.idx; let best=null; for(let i=0;i<I.length;i+=3){ const a=I[i]*3,b=I[i+1]*3,c=I[i+2]*3;
+    const e1x=P[b]-P[a],e1y=P[b+1]-P[a+1],e1z=P[b+2]-P[a+2],e2x=P[c]-P[a],e2y=P[c+1]-P[a+1],e2z=P[c+2]-P[a+2];
+    const px=d[1]*e2z-d[2]*e2y,py=d[2]*e2x-d[0]*e2z,pz=d[0]*e2y-d[1]*e2x,det=e1x*px+e1y*py+e1z*pz; if(Math.abs(det)<1e-12) continue; const f=1/det;
+    const sx=o[0]-P[a],sy=o[1]-P[a+1],sz=o[2]-P[a+2],u=f*(sx*px+sy*py+sz*pz); if(u<0||u>1) continue;
+    const qx=sy*e1z-sz*e1y,qy=sz*e1x-sx*e1z,qz=sx*e1y-sy*e1x,v=f*(d[0]*qx+d[1]*qy+d[2]*qz); if(v<0||u+v>1) continue;
+    const t=f*(e2x*qx+e2y*qy+e2z*qz); if(t>1e-4&&(best===null||t<best)) best=t; } return best; }
 function pick(o,d,opts={},list=drawList){
   let best=null,hbest=null;
   for(const e of list){ const n=e.node; if(!n.pick||!e.mesh||n.hidden) continue; if(n.opening&&opts.noOpen) continue;
     if(e.bg) continue; if(n.handle){ if(!opts.handles) continue; } else if(!e.item&&!n.isFloor&&!n.panel&&!n.blocker&&!n.opening&&!n.struct&&!n.liftBtn) continue; if(n.struct&&opts.noStruct) continue;
     if(opts.exclude&&e.item===opts.exclude) continue; if(opts.excludeSet&&e.item&&opts.excludeSet.has(e.item)) continue; if(opts.itemsOnly&&!e.item) continue; if(opts.skipHand&&n.panel&&n.panel.type==='hand') continue;
-    const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d),t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx);
-    if(t===null) continue;
+    const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d); let t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx);
+    if(t===null) continue; if(e.mesh.precise){ t=rayMesh(lo,ld,e.mesh.g); if(t===null) continue; }
     // луч начинается внутри коробки стены/кабины/конструкции — её не считаем (иначе изнутри лифта не нажать кнопку)
     if(!e.item&&!n.isFloor&&!n.panel&&!n.liftBtn){ const mn=e.mesh.mn,mx=e.mesh.mx; if(lo[0]>mn[0]&&lo[0]<mx[0]&&lo[1]>mn[1]&&lo[1]<mx[1]&&lo[2]>mn[2]&&lo[2]<mx[2]) continue; } if(n.handle||n.wbTool||n.wbBoard&&!xr.grab.size){ if(!hbest||t<hbest.t+(n.wbTool?0.05:0)) hbest={t,e,lo,ld}; } else if(!best||t<best.t) best={t,e,lo,ld}; }
   if(hbest) best=hbest; if(!best) return null;
-  if(!hbest&&best.e.item){ const inA=n=>{ if(n._ia===undefined){ let a=n,r=false; while(a&&!a.item){ if(a.anim||a.trig){ r=true; break; } a=a.parent; } n._ia=r; } return n._ia; }; if(!inA(best.e.node)){ let ib=null; for(const e of list){ if(e.item!==best.e.item||!e.mesh||!inA(e.node)) continue; const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d),t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx); if(t!==null&&t<best.t+0.04&&(!ib||t<ib.t)) ib={t,e,lo,ld}; } if(ib) best=ib; } }
+  if(!hbest&&best.e.item){ const inA=n=>{ if(n._ia===undefined){ let a=n,r=false; while(a&&!a.item){ if(a.trig||(a.anim&&a.anim.type!=='glow')){ r=true; break; } a=a.parent; } n._ia=r; } return n._ia; }; if(!inA(best.e.node)){ let ib=null; for(const e of list){ if(e.item!==best.e.item||!e.mesh||!inA(e.node)) continue; const inv=M4.inv(e.w),lo=M4.pt(inv,...o),ld=M4.dir(inv,...d),t=rayAabb(lo,ld,e.mesh.mn,e.mesh.mx); if(t!==null&&t<best.t+0.04&&(!ib||t<ib.t)) ib={t,e,lo,ld}; } if(ib) best=ib; } }
   const p=[o[0]+d[0]*best.t,o[1]+d[1]*best.t,o[2]+d[2]*best.t],n=best.e.node;
   if(n.handle) return {kind:'handle',handle:n.handle,point:p,t:best.t};
   if(n.wbTool||n.wbBoard){ let it=null,a=n; while(a){ if(a.item){ it=a.item; break; } a=a.parent; } return {kind:'item',item:it,inter:null,point:p,t:best.t,node:n}; }
@@ -1870,7 +1891,7 @@ function pick(o,d,opts={},list=drawList){
   if(n.opening) return {kind:'opening',opening:n.opening,point:p,t:best.t};
   if(n.blocker) return {kind:'wall',point:p,t:best.t};
   if(n.isFloor) return {kind:'floor',point:p,t:best.t};
-  const ly=best.lo[1]+best.ld[1]*best.t, top=Math.abs(ly-best.e.mesh.mx[1])<0.004&&best.e.w[5]>0.95;
+  const ly=best.lo[1]+best.ld[1]*best.t, top=(best.e.mesh.precise?ly>best.e.mesh.mx[1]-0.03:Math.abs(ly-best.e.mesh.mx[1])<0.004)&&best.e.w[5]>0.95;
   let a=n,inter=null; while(a){ if(a.trig){ inter=a.trig; break; } if(a.anim){ inter=a; break; } if(a.item) break; a=a.parent; }
   return {kind:'item',item:best.e.item,inter,point:p,t:best.t,top,node:n};
 }
@@ -2555,6 +2576,19 @@ function gestureUp(e){ if(e.pointerType!=='touch') return false; TG.p.delete(e.p
   $('sheetBtn').onclick=()=>{ document.body.classList.toggle('sheetOff'); updSheetBtn(); sfx('ui'); };
   if(TOUCH){ $('hint').dataset.touch='1'; }
 })();
+
+// ===== меню настроек и производительность =====
+const PERF={dyn:(()=>{ try{ return localStorage.getItem('dynRes')!=='0'; }catch(_){ return true; } })(),scale:1,ema:16.7,acc:0,n:0,last:0,fps:0,show:false};
+$('setBtn').onclick=e=>{ e.stopPropagation(); const m=$('setMenu'),r=$('setBtn').getBoundingClientRect(); m.style.left=Math.max(6,Math.min(innerWidth-200,r.left))+'px'; m.style.top=(r.bottom+8)+'px'; m.classList.toggle('on'); sfx('ui'); };
+addEventListener('pointerdown',e=>{ if(!e.target.closest('#setWrap')) $('setMenu').classList.remove('on'); });
+function updPerfBtns(){ $('dynN').textContent=PERF.dyn?'вкл':'выкл'; $('fpsN').textContent=PERF.show?'вкл':'выкл'; $('fpsBox').style.display=PERF.show?'block':'none'; }
+$('dynBtn').onclick=()=>{ PERF.dyn=!PERF.dyn; if(!PERF.dyn) PERF.scale=1; try{ localStorage.setItem('dynRes',PERF.dyn?'1':'0'); }catch(_){} updPerfBtns(); sfx('ui'); };
+$('fpsBtn').onclick=()=>{ PERF.show=!PERF.show; updPerfBtns(); sfx('ui'); }; updPerfBtns();
+// динамическое разрешение: держим ~50+ кадров, шаг 10%, решение не чаще раза в секунду
+function perfTick(dtMs){ PERF.ema+=(Math.min(dtMs,100)-PERF.ema)*0.08; PERF.acc+=dtMs; PERF.n++;
+  if(PERF.acc>=1000){ PERF.fps=Math.round(PERF.n*1000/PERF.acc); PERF.acc=0; PERF.n=0;
+    if(PERF.dyn&&!document.hidden){ if(PERF.ema>22&&PERF.scale>0.55) PERF.scale=Math.max(0.55,PERF.scale-0.1); else if(PERF.ema<15.5&&PERF.scale<1) PERF.scale=Math.min(1,PERF.scale+0.05); }
+    if(PERF.show) $('fpsBox').textContent=PERF.fps+' FPS'+(PERF.scale<0.999?' · '+Math.round(PERF.scale*100)+'%':''); } }
 function updSheetBtn(){ const b=$('sheetBtn'); if(b) b.textContent=document.body.classList.contains('sheetOff')?'☰ Каталог и настройки':'✕ Скрыть панель'; }
 if(PHONE&&innerWidth<=760) document.body.classList.add('sheetOff'); document.body.classList.toggle('walking',state.mode==='walk'); document.body.classList.toggle('editing',state.mode==='edit'); updSheetBtn();
 function panView(dx,dy){ const c=Math.cos(state.ed.yaw),s=Math.sin(state.ed.yaw),k=state.ed.dist*0.0013; state.ed.tx-=(c*dx+s*dy)*k; state.ed.tz-=(-s*dx+c*dy)*k; }
@@ -2628,8 +2662,8 @@ function placeFloating(el,it,vp,yOff){ const p=[it.x,(it.y||0)+it.size.h+yOff,it
 let frameN=0;
 function frame(t){ FRAME++;
   if(xr.session) return;
-  const dt=Math.min(0.05,(t-state.lastT)/1000); state.lastT=t; update(dt);
-  const d0=devicePixelRatio||1,dpr=QUAL.k===0?Math.min(d0,PHONE?1.5:1):QUAL.k===1?Math.min(d0,2):Math.min(Math.max(d0*1.6,1.75),3),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr); if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
+  perfTick(t-state.lastT); const dt=Math.min(0.05,(t-state.lastT)/1000); state.lastT=t; update(dt);
+  const d0=devicePixelRatio||1,dpr=QUAL.k===0?Math.min(d0,PHONE?1.5:1):QUAL.k===1?Math.min(d0,2):Math.min(Math.max(d0*1.6,1.75),3),ds=dpr*PERF.scale,w=Math.round(canvas.clientWidth*ds),h=Math.round(canvas.clientHeight*ds); if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
   if(state.inspect){ renderInspect(w,h); requestAnimationFrame(frame); return; }
   const cw=camWorld(),view=M4.inv(cw),pr=mainProj(),vp=M4.mul(pr,view); state.lastVP=vp;
   if(state.mode==='edit'){ const e=state.ed,k=e.dist*0.075,wy=0.35+0.35*k/0.6,fx=-cw[8],fz=-cw[10],fl=Math.hypot(fx,fz)||1;
