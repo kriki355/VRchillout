@@ -1515,57 +1515,27 @@ const OPEN_KINDS={
   arch:{name:'Проём без двери',w:1.2,min:0.6,max:4.0,ht:true,y0:()=>0,y1:H=>Math.min(2.2,H-0.2),icon:'<path d="M5 23V4h16v19"/><path d="M3 23h20"/>'},
   gate:{name:'Ворота',w:3.0,min:2.4,max:5.0,y0:()=>0,y1:H=>Math.min(3.0,H-0.35),icon:'<rect x="3" y="4" width="20" height="19" rx="1"/><path d="M3 9h20M3 14h20M3 19h20"/>'}};
 let roomSegs=[],oidSeq=1;
-const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'laminate',wall:'plaster',ceil:'stretch'},
-  wings:[{side:'N',offset:9,w:6,d:4.5,h:2.8,floor:'parquet',wall:'wood',ceil:'woodslat'},{side:'E',offset:6.5,w:5.5,d:6,h:3.2,floor:'epoxy',wall:'subway',ceil:'rack'},{side:'W',offset:1,w:5,d:4.5,h:3.0,floor:'epoxy',wall:'concrete',ceil:'grill'}],
+const DEMO={version:4,wallH:3.2,hall:{x:0,z:0,W:14,D:10,floor:'laminate',wall:'plaster',ceil:'stretch'},
+  wings:[{side:'E',offset:1,w:5,d:5,h:3.2,floor:'epoxy',wall:'subway',ceil:'rack'}],
   items:[
+    // ресепшн у входа и лаунж
+    {type:'reception',x:7.0,z:7.6},{type:'monstera',x:4.75,z:9.2},{type:'chester',x:2.4,z:9.35,rot:180},{type:'loftdesk3',x:2.4,z:7.9},{type:'book',x:2.6,z:7.9,y:-1,variant:0},{type:'loftpouf',x:0.85,z:7.9,variant:6},{type:'flower',x:0.45,z:9.5},
     // опенспейс
-    {type:'cabinet',x:6.0,z:0.3},{type:'cabinet',x:6.95,z:0.3,variant:1},{type:'flower',x:0.45,z:5.4},
-    {type:'loftdesk1',x:4.4,z:2.8},{type:'loftchair',x:3.7,z:2.0},{type:'loftchair',x:5.1,z:2.0},{type:'loftchair',x:3.7,z:3.6,rot:180},{type:'loftchair',x:5.1,z:3.6,rot:180},
-    {type:'laptop',x:3.7,z:2.55,y:-1},{type:'laptop',x:5.1,z:2.55,y:-1},{type:'laptop',x:3.7,z:3.05,rot:180,y:-1},{type:'laptop',x:5.1,z:3.05,rot:180,y:-1},{type:'desklamp',x:5.45,z:2.6,y:-1},{type:'books',x:3.2,z:2.8,y:-1},
-    {type:'standdesk',x:8.0,z:1.0},{type:'laptop',x:8.0,z:0.85,y:-1},{type:'desklamp',x:8.5,z:0.85,y:-1,variant:1},{type:'loftchair',x:8.0,z:1.9,rot:180,variant:11},
-    // игровая зона
-    {type:'gamedesk',x:8.0,z:5.0},{type:'gamechair',x:8.0,z:5.95,rot:180,variant:1},{type:'laptop',x:8.0,z:4.8,y:-1},
-    {type:'mobboard',x:0.9,z:7.6,rot:90},{type:'flower',x:0.45,z:6.4},
-    // ресепшн и лаунж у входа
-    {type:'chester',x:3.6,z:11.3,rot:180},{type:'loftdesk3',x:3.6,z:9.8},{type:'loftpouf',x:1.6,z:9.8,variant:6},{type:'loftpouf',x:5.6,z:9.8,variant:8},{type:'flower',x:0.45,z:11.5},
+    {type:'cabinet',x:0.5,z:0.3},{type:'cabinet',x:1.45,z:0.3,variant:1},{type:'loftdesk1',x:3.6,z:2.2},{type:'loftchair',x:2.9,z:1.4},{type:'loftchair',x:4.3,z:1.4},{type:'loftchair',x:2.9,z:3.0,rot:180},{type:'loftchair',x:4.3,z:3.0,rot:180},
+    {type:'laptop',x:2.9,z:1.95,y:-1},{type:'laptop',x:4.3,z:1.95,y:-1},{type:'laptop',x:2.9,z:2.45,rot:180,y:-1},{type:'laptop',x:4.3,z:2.45,rot:180,y:-1},{type:'desklamp',x:4.65,z:2.0,y:-1},
+    {type:'standdesk',x:7.2,z:1.0},{type:'laptop',x:7.2,z:0.85,y:-1},{type:'desklamp',x:7.7,z:0.85,y:-1,variant:1},{type:'loftchair',x:7.2,z:1.9,rot:180,variant:11},
+    {type:'mobboard',x:0.9,z:5.0,rot:90},{type:'sansev',x:0.5,z:3.9},
+    // производство: мастерская у входа в пекарню
+    {type:'workbench',x:11.2,z:0.5},{type:'telega',x:13.2,z:0.5},{type:'gamedesk',x:7.4,z:4.6,rot:180},{type:'gamechair',x:7.4,z:3.65,variant:1},{type:'laptop',x:7.4,z:4.8,rot:180,y:-1},
     // кафе
-    {type:'minifridge',x:11.0,z:11.6,rot:180},{type:'cakecase',x:12.8,z:11.45,rot:180},{type:'sinktable',x:14.8,z:11.55,rot:180},{type:'prodtable',x:16.9,z:11.6,rot:180},{type:'microwave',x:16.6,z:11.6,rot:180,y:-1,variant:1},
-    {type:'roundtable',x:12.4,z:8.0},{type:'loftstul',x:12.4,z:9.3,rot:180,variant:6},{type:'loftstul',x:13.53,z:7.35,rot:300,variant:6},{type:'loftstul',x:11.27,z:7.35,rot:60,variant:6},
-    {type:'roundtable',x:16.0,z:8.0},{type:'loftstul',x:16.0,z:9.3,rot:180,variant:2},{type:'loftstul',x:17.13,z:7.35,rot:300,variant:2},{type:'loftstul',x:14.87,z:7.35,rot:60,variant:2},
-    {type:'extinguisher',x:0.3,z:8.8},{type:'extinguisher',x:19.7,z:11.6},
-    // ресепшн у входа, декор, техника
-    {type:'reception',x:9.0,z:10.2},{type:'monstera',x:6.85,z:11.05},{type:'book',x:3.6,z:9.8,y:-1,variant:3},
-    {type:'coffee',x:16.6,z:11.65,rot:180,y:-1,variant:0},{type:'promfridge',x:18.75,z:11.45,rot:180},{type:'book',x:15.0,z:2.8,y:-1,variant:2},{type:'monstera',x:19.2,z:5.9},
-    // вторая рабочая группа и презентация
-    {type:'loftdesk1',x:15.6,z:2.8},{type:'loftchair',x:14.9,z:2.0,variant:2},{type:'loftchair',x:16.3,z:2.0,variant:2},{type:'loftchair',x:14.9,z:3.6,rot:180,variant:2},{type:'loftchair',x:16.3,z:3.6,rot:180,variant:2},
-    {type:'laptop',x:14.9,z:2.55,y:-1},{type:'laptop',x:16.3,z:2.55,y:-1},{type:'laptop',x:14.9,z:3.05,rot:180,y:-1},{type:'laptop',x:16.3,z:3.05,rot:180,y:-1},
-    {type:'shelving',x:19.6,z:2.8,rot:270},{type:'flower',x:19.5,z:0.5},{type:'whiteboard',x:17.0,z:5.6,rot:180},
-    // переговорная (северный отсек)
-    {type:'loftdesk2',x:12.0,z:-2.3},{type:'loftchair',x:11.4,z:-3.3,variant:4},{type:'loftchair',x:12.6,z:-3.3,variant:4},{type:'loftchair',x:11.4,z:-1.3,rot:180,variant:4},{type:'loftchair',x:12.6,z:-1.3,rot:180,variant:4},
-    {type:'laptop',x:11.4,z:-2.6,y:-1},{type:'laptop',x:12.6,z:-2.0,rot:180,y:-1},{type:'mobboard',x:9.6,z:-2.3,rot:90},{type:'sansev',x:14.6,z:-4.1},{type:'books',x:12.9,z:-2.6,y:-1},
-    // пекарня (восточный отсек)
-    {type:'oven4',x:25.4,z:7.6,rot:270},{type:'oven2',x:25.4,z:10.2,rot:270},{type:'saladette',x:22.3,z:6.9},{type:'sinktable',x:22.4,z:11.55,rot:180},{type:'extinguisher',x:20.3,z:6.8},{type:'prodtable',x:23.0,z:9.2},{type:'pk6',x:23.6,z:6.95},{type:'pka6',x:23.6,z:6.95,y:-1},{type:'mixer2',x:21.0,z:9.4,rot:90},
-    // мастерская (западный отсек)
-    {type:'workbench',x:-4.0,z:3.5,rot:90},{type:'telega',x:-3.4,z:1.5},{type:'toolcab',x:-1.6,z:1.4,variant:1},{type:'shelving',x:-2.6,z:5.6,rot:180},
+    {type:'cakecase',x:10.4,z:9.45,rot:180},{type:'prodtable',x:12.4,z:9.6,rot:180},{type:'coffee',x:12.0,z:9.65,rot:180,y:-1},{type:'microwave',x:12.9,z:9.6,rot:180,y:-1,variant:1},{type:'promfridge',x:13.55,z:6.9,rot:270},
+    {type:'roundtable',x:10.4,z:6.4},{type:'loftstul',x:10.4,z:7.7,rot:180,variant:6},{type:'loftstul',x:11.53,z:5.75,rot:300,variant:6},{type:'loftstul',x:9.27,z:5.75,rot:60,variant:6},
+    {type:'extinguisher',x:0.3,z:6.4},{type:'extinguisher',x:13.7,z:9.7},
+    // пекарня (отсек)
+    {type:'pk6',x:15.1,z:1.4},{type:'pka6',x:15.1,z:1.4,y:-1},{type:'oven4',x:18.45,z:2.4,rot:270},{type:'mixer2',x:18.3,z:4.8,rot:270},{type:'saladette',x:16.2,z:5.6,rot:180},{type:'extinguisher',x:14.3,z:5.7},
     // свет
-    {type:'lamp_round',x:4.4,z:2.8},{type:'lamp_square',x:8.0,z:3.0},{type:'lamp_round',x:3.6,z:10.0},{type:'lamp_square',x:4.0,z:6.6},{type:'lamp_round',x:12.4,z:8.0},{type:'lamp_round',x:16.0,z:8.0},{type:'lamp_square',x:9.0,z:10.2},{type:'lamp_square',x:13.5,z:11.0},{type:'lamp_square',x:16.5,z:3.5},{type:'lamp_square',x:8.5,z:9.0},
-    {type:'lamp_round',x:12.0,z:-2.3},{type:'lamp_square',x:23.0,z:8.2},{type:'lamp_square',x:23.0,z:10.6},{type:'lamp_round',x:-2.2,z:3.5}],
-  levels:[{wallH:3.2,hall:{x:0,z:0,W:20,D:12,floor:'parquet',wall:'brick',ceil:'grill'},wings:[],items:[
-    // кабинет руководителя
-    {type:'garderob',x:6.0,z:0.4,variant:2},{type:'wardrobe1',x:7.1,z:0.4,variant:2},{type:'drawers',x:8.3,z:0.35},
-    {type:'wardrobe2',x:18.8,z:1.1,rot:270},{type:'desk',x:17.0,z:2.4},{type:'loftchair',x:17.0,z:1.5,variant:2},{type:'laptop',x:17.0,z:2.2,y:-1},{type:'desklamp',x:17.7,z:2.25,y:-1,variant:2},{type:'books',x:16.3,z:2.3,y:-1,variant:1},{type:'pedestal',x:15.7,z:1.4,variant:1},
-    {type:'loftstul',x:16.4,z:3.6,rot:180,variant:2},{type:'loftstul',x:17.6,z:3.6,rot:180,variant:2},{type:'flower',x:19.5,z:4.2},
-    // коворкинг
-    {type:'loftdesk2',x:10.0,z:5.4},{type:'loftchair',x:9.4,z:4.4,variant:2},{type:'loftchair',x:10.6,z:4.4,variant:2},{type:'loftchair',x:9.4,z:6.4,rot:180,variant:2},{type:'loftchair',x:10.6,z:6.4,rot:180,variant:2},
-    {type:'laptop',x:9.4,z:5.1,y:-1},{type:'laptop',x:10.6,z:5.1,y:-1},{type:'laptop',x:9.4,z:5.7,rot:180,y:-1},{type:'laptop',x:10.6,z:5.7,rot:180,y:-1},
-    {type:'gamedesk',x:10.6,z:1.0},{type:'gamechair',x:10.6,z:1.95,rot:180,variant:0},{type:'laptop',x:10.6,z:0.8,y:-1},
-    {type:'standdesk',x:13.2,z:1.2},{type:'laptop',x:13.2,z:1.0,y:-1},{type:'desklamp',x:13.7,z:1.0,y:-1,variant:1},{type:'loftchair',x:13.2,z:2.1,rot:180,variant:11},
-    {type:'mobboard',x:7.0,z:5.4,rot:90},{type:'chester',x:2.2,z:7.2,rot:90},{type:'loftdesk3',x:3.6,z:7.2},{type:'loftpouf',x:5.0,z:7.2,variant:8},{type:'flower',x:0.45,z:9.0},
-    // лаунж
-    {type:'sofa',x:5.0,z:11.3,rot:180},{type:'loftdesk3',x:5.0,z:9.9},{type:'book',x:5.2,z:9.9,y:-1,variant:0},{type:'monstera',x:0.95,z:11.0,variant:1},{type:'loftpouf',x:3.4,z:9.8,variant:6},{type:'loftpouf',x:6.6,z:9.8,variant:2},{type:'flower',x:8.8,z:11.5},
-    {type:'roundtable',x:12.5,z:9.0},{type:'loftstul',x:12.5,z:10.3,rot:180,variant:1},{type:'loftstul',x:13.63,z:8.35,rot:300,variant:1},{type:'loftstul',x:11.37,z:8.35,rot:60,variant:1},
-    {type:'extinguisher',x:19.7,z:11.6},
-    {type:'lamp_round',x:17.0,z:2.4},{type:'lamp_square',x:10.0,z:5.4},{type:'lamp_round',x:12.0,z:2.0},{type:'lamp_square',x:3.6,z:7.2},{type:'lamp_round',x:5.0,z:10.2},{type:'lamp_round',x:12.5,z:9.0},{type:'lamp_square',x:8.5,z:7.5}]}]};
+    {type:'lamp_round',x:3.6,z:2.2},{type:'lamp_square',x:7.2,z:2.5},{type:'lamp_square',x:10.6,z:2.5},{type:'lamp_round',x:2.4,z:8.4},{type:'lamp_square',x:7.0,z:7.0},{type:'lamp_round',x:10.4,z:6.4},{type:'lamp_square',x:12.4,z:8.8},{type:'lamp_square',x:4.0,z:5.4},
+    {type:'lamp_square',x:16.5,z:2.4},{type:'lamp_square',x:16.5,z:4.6}]};
 let L=null, items=[], uidSeq=1; const favorites=new Map();
 
 /* ============ Помещение ============ */
